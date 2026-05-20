@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MessageSquare } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   Dialog,
@@ -77,7 +78,10 @@ export function Hero() {
           Custom software and web solutions to drive your business forward.
         </p>
         
-        <div className="flex justify-center fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <div
+          className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 fade-in-up"
+          style={{ animationDelay: '0.4s' }}
+        >
           <Dialog>
             <DialogTrigger asChild>
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-10 rounded-full text-lg font-extrabold shadow-[0_0_20px_rgba(123,58,237,0.3)] transition-all hover:scale-105">
@@ -109,7 +113,7 @@ export function Hero() {
                     all9s <span className="text-primary">Solutions</span>
                   </span>{' '}
                   utilizes a modern full-stack technology focused on scalable software engineering,
-                  responsive web development, database integration, automation, and digital transformation
+                  responsive web development, database integration, business automation, and digital transformation
                   services.
                 </p>
                 <div className="mt-5 text-left">
@@ -119,13 +123,24 @@ export function Hero() {
                     <li>Frontend: JavaScript/TypeScript, HTML5/CSS3</li>
                     <li>Databases: Microsoft SQL Server, IBM Db2 for i, MySQL</li>
                     <li>APIs & Integrations</li>
-                    <li>Automation & Workflow Systems</li>
+                    <li>Business Automation & Workflow Systems</li>
                     <li>Web & Application Infrastructure</li>
                   </ul>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="h-14 rounded-full border-primary/35 bg-background/60 px-10 text-lg font-extrabold text-foreground backdrop-blur-sm transition-all hover:scale-105 hover:border-primary/60 hover:bg-secondary/40"
+          >
+            <Link href="/#consultation">
+              Request Consultation
+              <MessageSquare className="ml-2 h-5 w-5" />
+            </Link>
+          </Button>
         </div>
 
         <div className="mt-12 flex flex-wrap justify-center gap-12 opacity-40 grayscale hover:grayscale-0 transition-all duration-700 fade-in-up" style={{ animationDelay: '0.6s' }}>

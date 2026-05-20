@@ -22,7 +22,7 @@ export function Partners() {
                   src={partner.imageUrl}
                   alt={partner.description}
                   fill
-                  className="object-contain opacity-50 transition-opacity group-hover:opacity-100"
+                  className="object-contain opacity-75 transition-opacity group-hover:opacity-100"
                   data-ai-hint={partner.imageHint}
                   sizes="(max-width: 640px) 100vw, 24rem"
                 />

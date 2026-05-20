@@ -77,7 +77,7 @@ export default function AboutPage() {
             </div>
             <div className="mx-auto w-full max-w-[min(100%,440px)] shrink-0 max-md:hidden lg:mx-0">
               <Image
-                src="/about-approach.png"
+                src="/clients.png"
                 alt="Client partnership consultation with business technology dashboard"
                 width={500}
                 height={333}
@@ -100,10 +100,10 @@ export default function AboutPage() {
               development, technical instruction, and systems-focused problem solving, Joseph brings a practical,
               client-centered approach to technology and digital transformation.
             </p>
-            <div className="flex flex-row flex-nowrap items-start gap-6 sm:gap-x-10">
+            <div className="flex flex-row flex-nowrap items-center gap-6 sm:gap-x-10">
               <div className="hidden w-[100px] shrink-0 overflow-hidden rounded-xl sm:block">
                 <Image
-                  src="/founder-joseph-burris.png"
+                  src="/founder.png"
                   alt="Joseph Burris, Founder of all9s Solutions"
                   width={100}
                   height={133}
