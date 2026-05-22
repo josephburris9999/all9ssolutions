@@ -3,56 +3,86 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { TurnstileWidget } from '@/components/turnstile-widget';
+import { consultationFormSchema, type ConsultationFormValues } from '@/lib/consultation-schema';
+import { formatPhoneNumber, isCompletePhoneNumber } from '@/lib/phone';
+import { getTimezoneOptions } from '@/lib/timezones';
 import { useToast } from '@/hooks/use-toast';
 import { MessageSquare, Send } from 'lucide-react';
 
-const formSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, 'Full name is required')
-    .min(2, 'Please enter at least 2 characters for your name'),
-  email: z
-    .string()
-    .trim()
-    .min(1, 'Email is required')
-    .email('Enter a valid email address'),
-  company: z.string().trim().max(200),
-  message: z
-    .string()
-    .trim()
-    .min(1, 'How can we help? is required')
-    .min(10, 'Please provide a bit more detail (at least 10 characters)'),
-});
-
 const consultationFormEndpoint =
-  process.env.NEXT_PUBLIC_CONSULTATION_FORM_ENDPOINT ?? '/php/send-consultation.php';
+  process.env.NEXT_PUBLIC_CONSULTATION_FORM_ENDPOINT ?? '/api/consultation';
+
+const turnstileSiteKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '').trim();
 
 export function ConsultationForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [honeypot, setHoneypot] = React.useState('');
+  const [turnstileToken, setTurnstileToken] = React.useState('');
+  const formStartedAtRef = React.useRef(Date.now());
+  const timezoneOptions = React.useMemo(() => getTimezoneOptions(), []);
+  const turnstileRequired = turnstileSiteKey.length > 0;
+
+  const form = useForm<ConsultationFormValues>({
+    resolver: zodResolver(consultationFormSchema),
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
+      timezone: "",
+      preferredContact: "e",
       company: "",
       message: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const phoneValue = form.watch('phone');
+  const hasPhone = isCompletePhoneNumber(phoneValue);
+
+  React.useEffect(() => {
+    if (!hasPhone) {
+      form.setValue('timezone', '');
+    }
+  }, [hasPhone, form]);
+
+  async function onSubmit(values: ConsultationFormValues) {
+    if (honeypot.trim().length > 0) {
+      return;
+    }
+
+    if (turnstileRequired && !turnstileToken) {
+      toast({
+        variant: 'destructive',
+        title: 'Security check required',
+        description: 'Please complete the verification below the form.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch(consultationFormEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          website: honeypot,
+          _formStartedAt: formStartedAtRef.current,
+          ...(turnstileToken ? { turnstileToken } : {}),
+        }),
       });
 
       let payload: { ok?: boolean; error?: string } = {};
@@ -76,9 +106,11 @@ export function ConsultationForm() {
 
       toast({
         title: 'Consultation Requested',
-        description: 'Our enterprise solution architects will contact you within 4 hours.',
+        description: 'We will contact you within 1 business day.',
       });
       form.reset();
+      setTurnstileToken('');
+      formStartedAtRef.current = Date.now();
     } catch {
       toast({
         variant: 'destructive',
@@ -116,14 +148,34 @@ export function ConsultationForm() {
                 </div>
               </div>
             </div>
-            <p className="mt-8 border-t border-white/15 pt-6 text-xs opacity-80 md:mt-auto md:pt-6">
-              Your information will be kept confidential.
-            </p>
+            <div className="mt-8 md:mt-auto">
+              <p className="text-xs opacity-80">
+                We will contact you within 1 business day.
+              </p>
+              <p className="mt-6 border-t border-white/15 pt-6 text-xs opacity-80">
+                Your information will be kept confidential.
+              </p>
+            </div>
           </div>
           
           <div className="p-8 md:p-12 flex-1">
             <Form {...form}>
               <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div
+                  aria-hidden="true"
+                  className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
+                >
+                  <label htmlFor="website">Website</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                  />
+                </div>
                 <FormField
                   control={form.control}
                   name="name"
@@ -145,28 +197,124 @@ export function ConsultationForm() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        Email <span className="text-white" aria-hidden>*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="john@company.com"
-                          autoComplete="email"
-                          {...field}
-                          required
-                          className="bg-secondary/50 border-border text-foreground"
+                <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="contents">
+                        <FormLabel className="col-start-1 row-start-1 text-foreground">
+                          Email <span className="text-white" aria-hidden>*</span>
+                        </FormLabel>
+                        <FormControl className="col-start-1 row-start-2 mb-4">
+                          <Input
+                            type="email"
+                            placeholder="john@company.com"
+                            autoComplete="email"
+                            {...field}
+                            required
+                            className="bg-secondary/50 border-border text-foreground"
+                          />
+                        </FormControl>
+                        <FormMessage className="col-start-1 row-start-3" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem className="contents">
+                        <FormLabel className="col-start-1 row-start-4 text-foreground">
+                          Phone (optional)
+                        </FormLabel>
+                        <FormControl className="col-start-1 row-start-5">
+                          <Input
+                            type="tel"
+                            placeholder="(555) 123-4567"
+                            autoComplete="tel"
+                            inputMode="numeric"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(formatPhoneNumber(e.target.value));
+                            }}
+                            className="bg-secondary/50 border-border text-foreground"
+                          />
+                        </FormControl>
+                        <FormMessage
+                          className={`col-start-1 ${hasPhone ? 'row-start-7' : 'row-start-6'}`}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                      </FormItem>
+                    )}
+                  />
+                  {hasPhone && (
+                    <FormField
+                      control={form.control}
+                      name="timezone"
+                      render={({ field }) => (
+                        <FormItem className="col-start-1 row-start-6 space-y-2">
+                          <FormLabel className="text-foreground">
+                            Timezone <span className="text-white" aria-hidden>*</span>
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || undefined}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-secondary/50 border-border text-foreground">
+                                <SelectValue placeholder="Select Your Timezone" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="max-h-72">
+                              {timezoneOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="preferredContact"
+                    render={({ field }) => (
+                      <FormItem className="contents">
+                        <FormLabel className="col-start-2 row-start-1 text-foreground">
+                          Preferred
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="contents"
+                          >
+                            <div className="col-start-2 row-start-2 mb-4 flex h-10 items-center justify-center self-start">
+                              <RadioGroupItem
+                                value="e"
+                                id="prefer-email"
+                                aria-label="Preferred email contact"
+                                className="border-2 border-border text-foreground"
+                              />
+                            </div>
+                            <div className="col-start-2 row-start-5 flex h-10 items-center justify-center self-start">
+                              <RadioGroupItem
+                                value="p"
+                                id="prefer-phone"
+                                aria-label="Preferred phone contact"
+                                className="border-2 border-border text-foreground"
+                              />
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage className="col-start-2 row-start-6" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
                   name="company"
@@ -200,6 +348,14 @@ export function ConsultationForm() {
                     </FormItem>
                   )}
                 />
+                {turnstileRequired && (
+                  <TurnstileWidget
+                    siteKey={turnstileSiteKey}
+                    onToken={setTurnstileToken}
+                    onExpire={() => setTurnstileToken('')}
+                    onError={() => setTurnstileToken('')}
+                  />
+                )}
                 <Button
                   type="submit"
                   disabled={isSubmitting}

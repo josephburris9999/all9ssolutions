@@ -1,0 +1,38 @@
+=== Started ===
+PWD=/home/joseph/workspaces/all9s/all9ssolutions
+=== nvm use 22 ===
+Now using node v22.22.2 (npm v10.9.7)
+nvm use 22 exit code: 0
+v22.22.2
+10.9.7
+=== npm install ===
+
+> nextn@0.1.0 postinstall
+> prisma generate
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.
+
+✔ Generated Prisma Client (7.8.0) to ./src/generated/prisma in 106ms
+
+
+added 2 packages, removed 27 packages, and audited 337 packages in 5s
+
+67 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm install exit code: 0
+=== npm run typecheck ===
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit
+
+src/lib/phone.test.ts(5,3): error TS2305: Module '"./phone"' has no exported member 'hasPhoneNumber'.
+npm run typecheck exit code: 2
+=== Summary ===
+nvm use 22: 0
+npm install: 0
+npm run typecheck: 2
+=== Finished ===

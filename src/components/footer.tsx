@@ -2,7 +2,6 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Twitter, Linkedin, Github } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const logo = PlaceHolderImages.find(img => img.id === 'brand-logo');
@@ -28,22 +27,11 @@ export function Footer() {
               </div>
               <span className="text-xl font-bold text-foreground">all9s <span className="text-primary">Solutions</span></span>
             </Link>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               Providing custom software development, web development, technology consulting, database solutions,
               business automation, and digital transformatoin services focused on reliability, efficiency, and long-term
               growth.
             </p>
-            <div className="flex gap-4">
-              <Link href="#" className="p-2 bg-secondary/50 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors text-foreground/70 hover:text-foreground">
-                <Twitter className="w-4 h-4" />
-              </Link>
-              <Link href="#" className="p-2 bg-secondary/50 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors text-foreground/70 hover:text-foreground">
-                <Linkedin className="w-4 h-4" />
-              </Link>
-              <Link href="#" className="p-2 bg-secondary/50 rounded-lg hover:bg-primary/20 hover:text-primary transition-colors text-foreground/70 hover:text-foreground">
-                <Github className="w-4 h-4" />
-              </Link>
-            </div>
           </div>
           
           <div className="md:ml-auto md:w-max md:text-right">

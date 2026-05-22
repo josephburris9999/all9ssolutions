@@ -1,0 +1,27 @@
+// Prisma schema — https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Consultation form submissions from the website.
+model ConsultationRequest {
+  id               String   @id @default(cuid()) @db.VarChar(30)
+  name             String   @db.VarChar(200)
+  email            String   @db.VarChar(254)
+  phone            String?  @db.VarChar(30)
+  timezone         String?  @db.VarChar(100)
+  preferredContact String   @db.VarChar(1)
+  company          String?  @db.VarChar(200)
+  message          String   @db.VarChar(10000)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
+}

@@ -38,6 +38,14 @@ yarn-error.log*
 next-env.d.ts
 
 .env*
+!.env.example
+
+# prisma local database
+/prisma/*.db
+/prisma/*.db-journal
+
+# prisma generated client (regenerated via postinstall / db:generate)
+/src/generated/
 
 # firebase
 firebase-debug.log

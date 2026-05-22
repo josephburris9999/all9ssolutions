@@ -7,12 +7,6 @@
       "imageHint": "all9s brand mark"
     },
     {
-      "id": "hero-bg",
-      "description": "Abstract enterprise network",
-      "imageUrl": "https://picsum.photos/seed/all9s-hero/1920/1080",
-      "imageHint": "enterprise network"
-    },
-    {
       "id": "about-intro",
       "description": "Isometric diagram of all9s Solutions service areas: strategy, databases, automation, transformation, software, and web development.",
       "imageUrl": "/services.png",
