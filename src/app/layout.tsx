@@ -7,6 +7,11 @@ import { Toaster } from '@/components/ui/toaster';
 export const metadata: Metadata = {
   title: 'all9s Solutions | Enterprise Excellence',
   description: 'Providing world-class enterprise solutions with 99.9999999% reliability and sophistication.',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
