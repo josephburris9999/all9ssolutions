@@ -23,11 +23,8 @@ export default function AboutPage() {
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
             <div className="max-w-2xl flex-1 space-y-4 text-lg leading-relaxed text-muted-foreground">
               <p>
-                <span className="text-xl font-bold tracking-tight text-foreground">
-                  all9s <span className="text-primary">Solutions</span>
-                </span>{' '}
-                is a software and web development consulting company focused on building reliable, scalable, and modern
-                digital solutions for businesses and organizations.
+                all9s Solutions is a software and web development consulting company focused on building reliable,
+                scalable, and modern digital solutions for businesses and organizations.
               </p>
               <p>
                 We specialize in custom software development, web development, technology consulting, database
@@ -40,7 +37,7 @@ export default function AboutPage() {
               </p>
             </div>
             {aboutIntroImage && (
-              <div className="relative mx-auto aspect-square w-full max-w-md shrink-0 overflow-hidden max-md:hidden lg:mx-0 lg:max-w-[min(100%,440px)]">
+              <div className="relative mx-auto aspect-square w-full max-w-md shrink-0 overflow-hidden lg:mx-0 lg:max-w-[min(100%,440px)]">
                 <Image
                   src={aboutIntroImage.imageUrl}
                   alt={aboutIntroImage.description}
@@ -75,7 +72,7 @@ export default function AboutPage() {
                 reliable systems that create measurable value, support growth, and evolve alongside your business.
               </p>
             </div>
-            <div className="mx-auto w-full max-w-[min(100%,440px)] shrink-0 max-md:hidden lg:mx-0">
+            <div className="mx-auto w-full max-w-[min(100%,440px)] shrink-0 lg:mx-0">
               <Image
                 src="/clients.png"
                 alt="Client partnership consultation with business technology dashboard"
@@ -100,8 +97,8 @@ export default function AboutPage() {
               development, technical instruction, and systems-focused problem solving, Joseph brings a practical,
               client-centered approach to technology and digital transformation.
             </p>
-            <div className="flex flex-row flex-nowrap items-center gap-6 sm:gap-x-10">
-              <div className="hidden w-[100px] shrink-0 overflow-hidden rounded-xl sm:block">
+            <div className="flex flex-col items-center gap-4 md:flex-row md:flex-nowrap md:items-center md:gap-6 md:gap-x-10">
+              <div className="w-[100px] shrink-0 overflow-hidden rounded-xl">
                 <Image
                   src="/founder.png"
                   alt="Joseph Burris, Founder of all9s Solutions"
@@ -111,7 +108,7 @@ export default function AboutPage() {
                   sizes="100px"
                 />
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 w-full flex-1 md:w-auto">
                 <p>
                   His background includes development work across Java, JavaScript, Python, PHP, SQL, HTML5, and CSS3,
                   with a focus on creating reliable applications, modern web experiences, and streamlined operational

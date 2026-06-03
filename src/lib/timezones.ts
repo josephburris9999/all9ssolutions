@@ -61,6 +61,15 @@ function formatTimezoneLabel(zone: string, now: Date): string {
   }
 }
 
+export function isValidIanaTimeZone(timeZone: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getTimezoneOptions(): TimezoneOption[] {
   const now = new Date();
   try {

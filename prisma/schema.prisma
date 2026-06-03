@@ -11,17 +11,173 @@ datasource db {
 
 /// Consultation form submissions from the website.
 model ConsultationRequest {
-  id               String   @id @default(cuid()) @db.VarChar(30)
-  name             String   @db.VarChar(200)
-  email            String   @db.VarChar(254)
-  phone            String?  @db.VarChar(30)
-  timezone         String?  @db.VarChar(100)
-  preferredContact String   @db.VarChar(1)
-  company          String?  @db.VarChar(200)
-  message          String   @db.VarChar(10000)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id               String      @id @default(cuid()) @db.VarChar(30)
+  portalUserId     String?     @db.VarChar(30)
+  name             String      @db.VarChar(200)
+  email            String      @db.VarChar(254)
+  phone            String?     @db.VarChar(30)
+  timezone         String?     @db.VarChar(100)
+  preferredContact String      @db.VarChar(1)
+  company          String?     @db.VarChar(200)
+  message          String      @db.VarChar(10000)
+  lastResendEmailId   String?   @db.VarChar(64)
+  emailDeliveryStatus String?   @db.VarChar(20)
+  emailBouncedAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  portalUser       PortalUser? @relation(fields: [portalUserId], references: [id], onDelete: SetNull)
+  projects         Project[]
+  clientAgreement  ClientAgreement?
 
   @@index([email])
   @@index([createdAt])
+  @@index([portalUserId])
+  @@index([lastResendEmailId])
+}
+
+/// Client accounts for the secure portal (credentials provisioned by all9s).
+/// Contact email is stored on linked ConsultationRequest rows.
+model PortalUser {
+  id                   String                @id @default(cuid()) @db.VarChar(30)
+  role                 String                @default("c") @db.VarChar(1)
+  passwordHash         String                @db.VarChar(255)
+  mustChangePassword   Boolean               @default(true)
+  failedLoginAttempts      Int                   @default(0)
+  lockedAt                 DateTime?
+  passwordResetTokenHash   String?               @db.VarChar(64)
+  passwordResetExpiresAt   DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  consultationRequests ConsultationRequest[]
+  projects             Project[]
+}
+
+/// Files uploaded by clients through the portal (blob storage in Supabase).
+model PortalContentUpload {
+  id           String     @id @default(cuid()) @db.VarChar(30)
+  projectId    String     @db.VarChar(30)
+  fileName     String     @db.VarChar(255)
+  storageKey   String     @db.VarChar(500)
+  mimeType     String     @db.VarChar(127)
+  sizeBytes    Int
+  createdAt    DateTime   @default(now())
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, createdAt])
+}
+
+/// Per-project agreements customized for individual projects (SOW, addenda, etc.).
+model ProjectAgreement {
+  id               String                  @id @default(cuid()) @db.VarChar(30)
+  projectId        String                  @db.VarChar(30)
+  title            String                  @db.VarChar(200)
+  body             String                  @db.VarChar(20000)
+  documentVersion  String                  @db.VarChar(20)
+  status           ProjectAgreementStatus  @default(PENDING)
+  signerName       String?                 @db.VarChar(200)
+  signedAt         DateTime?               @db.Timestamptz(3)
+  signedTimeZone   String?                 @db.VarChar(100)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  project          Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, status])
+  @@index([createdAt])
+}
+
+/// Global Client Service Agreement — one signed record per consultation. Contract text lives in code.
+model ClientAgreement {
+  id                    String              @id @default(cuid()) @db.VarChar(30)
+  consultationRequestId String              @unique @db.VarChar(30)
+  signerName            String              @db.VarChar(200)
+  signedAt              DateTime            @db.Timestamptz(3)
+  version               String              @db.VarChar(20)
+  signedTimeZone        String?             @db.VarChar(100)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  consultationRequest   ConsultationRequest @relation(fields: [consultationRequestId], references: [id], onDelete: Cascade)
+
+  @@index([consultationRequestId])
+  @@index([signedAt])
+}
+
+/// Client projects (many per PortalUser).
+model Project {
+  id                    String         @id @default(cuid()) @db.VarChar(30)
+  portalUserId          String         @db.VarChar(30)
+  consultationRequestId String         @unique @db.VarChar(30)
+  title                 String         @db.VarChar(200)
+  status                ProjectStatus  @default(ACTIVE)
+  estimatedCompletionAt DateTime?      @db.Timestamptz(3)
+  depositAmount         Float          @default(0) @db.DoublePrecision
+  amountDue             Float          @default(0) @db.DoublePrecision
+  paidAmount            Float          @default(0) @db.DoublePrecision
+  design                String         @db.VarChar(20000)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  portalUser            PortalUser     @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  consultationRequest   ConsultationRequest @relation(fields: [consultationRequestId], references: [id], onDelete: Restrict)
+  agreements            ProjectAgreement[]
+  contentUploads        PortalContentUpload[]
+  progressRecords       Progress[]
+
+  @@index([portalUserId])
+  @@index([portalUserId, status])
+  @@index([estimatedCompletionAt])
+}
+
+/// Client engagement tracked in the portal (many per Project).
+model Progress {
+  id           String            @id @default(cuid()) @db.VarChar(30)
+  projectId    String            @db.VarChar(30)
+  title        String            @db.VarChar(200)
+  status       ProgressStatus    @default(OPEN)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  project      Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  messages     ProgressMessage[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// Client requests and provider answers on a progress record (ordered by createdAt).
+model ProgressMessage {
+  id         String              @id @default(cuid()) @db.VarChar(30)
+  progressId String              @db.VarChar(30)
+  kind       ProgressMessageKind
+  body       String              @db.VarChar(10000)
+  createdAt  DateTime            @default(now())
+  progress   Progress            @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+  @@index([progressId])
+  @@index([progressId, createdAt])
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectAgreementStatus {
+  PENDING
+  SIGNED
+}
+
+enum ProgressStatus {
+  OPEN
+  AWAITING_PROVIDER
+  AWAITING_CLIENT
+  CLOSED
+}
+
+enum ProgressMessageKind {
+  REQUEST
+  ANSWER
 }

@@ -61,6 +61,42 @@ Default URL:
 DATABASE_URL="postgresql://user:all9s_dev_password@localhost:5432/all9ssolutions?schema=public"
 ```
 
+### Option C — Supabase
+
+Use two URLs:
+
+| Variable | Used by | Connection |
+|----------|---------|------------|
+| `DATABASE_URL` | App (`src/lib/prisma.ts`) | Pooler, port **6543**, `?pgbouncer=true` |
+| `DIRECT_URL` | Prisma CLI (`prisma.config.ts`) | **Session** pooler, port **5432** (same host as above, no `pgbouncer=true`) |
+
+Copy connection strings from **Supabase → Project Settings → Database**.
+
+```env
+DATABASE_URL="postgres://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true"
+DIRECT_URL="postgres://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres?sslmode=require"
+```
+
+**P1001 on `db.[project-ref].supabase.co`:** The direct database host is often **IPv6-only**. WSL/Windows and many networks cannot reach it, which produces “Can't reach database server”. Use the **session pooler** URL on port **5432** for `DIRECT_URL` instead (as above). If you enable Supabase’s IPv4 add-on, `db.*.supabase.co` may work with user `postgres`.
+
+Then migrate:
+
+```bash
+npm run db:migrate
+```
+
+Production deploy (and **Supabase** when `migrate dev` fails on the shadow database):
+
+```bash
+npm run db:migrate:deploy
+```
+
+(`prisma.config.ts` reads `DIRECT_URL` automatically; you do not pass `DATABASE_URL` on the command line.)
+
+### Row Level Security (Supabase)
+
+Migration `20260527120000_enable_rls` turns on RLS for all `public` app tables with **no** `anon`/`authenticated` policies, so the Supabase Data API cannot access them. Prisma (postgres role) is unaffected. `_prisma_migrations` is intentionally excluded (it is not present in Prisma’s shadow DB during `migrate dev`).
+
 ### Option B — Docker (optional)
 
 Requires Docker installed (`sudo apt install -y docker.io` and WSL integration, or Docker Desktop).
@@ -101,7 +137,7 @@ const requests = await prisma.consultationRequest.findMany();
 | File | Purpose |
 |------|---------|
 | `prisma/schema.prisma` | Models (`provider = "postgresql"`) |
-| `prisma.config.ts` | Database URL for CLI (migrate, studio) |
+| `prisma.config.ts` | `DIRECT_URL` for CLI (migrate, studio); falls back to `DATABASE_URL` locally |
 | `src/lib/prisma.ts` | App client with `@prisma/adapter-pg` and `pg` connection pool |
 
 Generated client output: `src/generated/prisma/` (created by `prisma generate`).

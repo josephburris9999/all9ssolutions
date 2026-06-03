@@ -17,9 +17,18 @@ import {
 } from '@/components/ui/select';
 import { TurnstileWidget } from '@/components/turnstile-widget';
 import { consultationFormSchema, type ConsultationFormValues } from '@/lib/consultation-schema';
+import {
+  CONSULTATION_COMPANY_MAX_LENGTH,
+  CONSULTATION_EMAIL_MAX_LENGTH,
+  CONSULTATION_MESSAGE_MAX_LENGTH,
+  CONSULTATION_NAME_MAX_LENGTH,
+  CONSULTATION_PHONE_MAX_LENGTH,
+} from '@/lib/field-lengths';
+import { cn } from '@/lib/utils';
 import { formatPhoneNumber, isCompletePhoneNumber } from '@/lib/phone';
 import { getTimezoneOptions } from '@/lib/timezones';
 import { useToast } from '@/hooks/use-toast';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { MessageSquare, Send } from 'lucide-react';
 
 const consultationFormEndpoint =
@@ -29,7 +38,7 @@ const turnstileSiteKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '').trim
 
 export function ConsultationForm() {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isSubmitting, runGuardedSubmit } = useSubmitGuard();
   const [honeypot, setHoneypot] = React.useState('');
   const [turnstileToken, setTurnstileToken] = React.useState('');
   const formStartedAtRef = React.useRef(Date.now());
@@ -52,11 +61,13 @@ export function ConsultationForm() {
   const phoneValue = form.watch('phone');
   const hasPhone = isCompletePhoneNumber(phoneValue);
 
+  const { setValue } = form;
+
   React.useEffect(() => {
     if (!hasPhone) {
-      form.setValue('timezone', '');
+      setValue('timezone', '');
     }
-  }, [hasPhone, form]);
+  }, [hasPhone, setValue]);
 
   async function onSubmit(values: ConsultationFormValues) {
     if (honeypot.trim().length > 0) {
@@ -72,8 +83,7 @@ export function ConsultationForm() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
+    await runGuardedSubmit(async () => {
       const res = await fetch(consultationFormEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,15 +121,13 @@ export function ConsultationForm() {
       form.reset();
       setTurnstileToken('');
       formStartedAtRef.current = Date.now();
-    } catch {
+    }).catch(() => {
       toast({
         variant: 'destructive',
         title: 'Could not send request',
         description: 'Network error. Please try again or email hello@all9ssolutions.com.',
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   }
 
   return (
@@ -188,6 +196,7 @@ export function ConsultationForm() {
                         <Input
                           placeholder="John Smith"
                           autoComplete="name"
+                          maxLength={CONSULTATION_NAME_MAX_LENGTH}
                           {...field}
                           required
                           className="bg-secondary/50 border-border text-foreground"
@@ -211,6 +220,7 @@ export function ConsultationForm() {
                             type="email"
                             placeholder="john@company.com"
                             autoComplete="email"
+                            maxLength={CONSULTATION_EMAIL_MAX_LENGTH}
                             {...field}
                             required
                             className="bg-secondary/50 border-border text-foreground"
@@ -234,6 +244,7 @@ export function ConsultationForm() {
                             placeholder="(555) 123-4567"
                             autoComplete="tel"
                             inputMode="numeric"
+                            maxLength={CONSULTATION_PHONE_MAX_LENGTH}
                             {...field}
                             onChange={(e) => {
                               field.onChange(formatPhoneNumber(e.target.value));
@@ -322,7 +333,12 @@ export function ConsultationForm() {
                     <FormItem>
                       <FormLabel className="text-foreground">Company (optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Global Corp" {...field} className="bg-secondary/50 border-border text-foreground" />
+                        <Input
+                          placeholder="Global Corp"
+                          maxLength={CONSULTATION_COMPANY_MAX_LENGTH}
+                          {...field}
+                          className="bg-secondary/50 border-border text-foreground"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -331,22 +347,37 @@ export function ConsultationForm() {
                 <FormField
                   control={form.control}
                   name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        How can we help? <span className="text-white" aria-hidden>*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe your enterprise challenges..."
-                          className="min-h-[120px] bg-secondary/50 border-border text-foreground"
-                          {...field}
-                          required
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const messageLength = field.value.length;
+                    const atLimit = messageLength >= CONSULTATION_MESSAGE_MAX_LENGTH;
+
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-foreground">
+                          How can we help? <span className="text-white" aria-hidden>*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe your enterprise challenges..."
+                            className="min-h-[120px] bg-secondary/50 border-border text-foreground"
+                            maxLength={CONSULTATION_MESSAGE_MAX_LENGTH}
+                            {...field}
+                            required
+                          />
+                        </FormControl>
+                        <p
+                          className={cn(
+                            'text-right text-xs tabular-nums',
+                            atLimit ? 'text-destructive' : 'text-muted-foreground'
+                          )}
+                          aria-live="polite"
+                        >
+                          {messageLength} / {CONSULTATION_MESSAGE_MAX_LENGTH}
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 {turnstileRequired && (
                   <TurnstileWidget

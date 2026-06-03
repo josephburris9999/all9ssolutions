@@ -1,0 +1,2 @@
+-- No-op placeholder migration.
+-- This directory previously existed without migration.sql, which causes Prisma P3015.

@@ -18,10 +18,10 @@ Without this, the consultation API cannot save submissions.
 
 ## Migrations
 
-Apply schema to production once (from your machine or a one-off Render shell):
+Apply schema to production once (from your machine or a one-off Render shell). With Supabase, set **`DIRECT_URL`** in `.env` (see `docs/prisma.md`); `prisma.config.ts` uses it for the CLI:
 
 ```bash
-DATABASE_URL="your-production-url" npx prisma migrate deploy
+npx prisma migrate deploy
 ```
 
 Or use `npm run db:push` only for disposable dev databases — prefer `migrate deploy` in production.

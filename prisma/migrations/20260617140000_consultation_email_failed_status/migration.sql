@@ -1,0 +1,2 @@
+-- No-op placeholder migration.
+-- The failed-email status change was reverted; this directory must exist for Prisma P3015.

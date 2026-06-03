@@ -109,10 +109,7 @@ export function Hero() {
               </DialogHeader>
               <div className="border border-border rounded-3xl bg-secondary/10 px-4 py-4 sm:px-5 sm:py-5">
                 <p className="text-left text-base sm:text-lg leading-relaxed text-muted-foreground">
-                  <span className="text-xl font-bold tracking-tight text-foreground">
-                    all9s <span className="text-primary">Solutions</span>
-                  </span>{' '}
-                  utilizes a modern full-stack technology focused on scalable software engineering,
+                  all9s Solutions utilizes a modern full-stack technology focused on scalable software engineering,
                   responsive web development, database integration, business automation, and digital transformation
                   services.
                 </p>

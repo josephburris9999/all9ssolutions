@@ -60,6 +60,13 @@ export function isConsultationRateLimitEnabled(): boolean {
   return true;
 }
 
+/** Off in development unless explicitly forced on. Override with DISABLE_PORTAL_RATE_LIMIT=true. */
+export function isPortalRateLimitEnabled(): boolean {
+  if (process.env.DISABLE_PORTAL_RATE_LIMIT === 'true') return false;
+  if (process.env.NODE_ENV === 'development') return false;
+  return true;
+}
+
 export function formatRetryAfter(seconds: number): string {
   if (seconds < 60) return `${seconds} second${seconds === 1 ? '' : 's'}`;
   const minutes = Math.ceil(seconds / 60);

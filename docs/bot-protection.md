@@ -19,7 +19,19 @@ Submissions go to **`POST /api/consultation`** by default (not directly to PHP).
 
 No extra config required. Submissions are saved to PostgreSQL via Prisma.
 
-### 2. Email via PHP (optional)
+### 2. Confirmation email to the client
+
+Every submission is saved to `ConsultationRequest` (clients may submit multiple requests). The API sends an acknowledgment to the address they entered. Configure [Resend](https://resend.com) in `.env`:
+
+```env
+RESEND_API_KEY="re_..."
+CONSULTATION_CONFIRMATION_FROM="all9s Solutions <hello@all9ssolutions.com>"
+CONSULTATION_REPLY_TO="hello@all9ssolutions.com"
+```
+
+`CONSULTATION_CONFIRMATION_FROM` must use a domain verified in Resend. The email states that all9s Solutions will contact them within one business day. Submitters are **not** redirected to the Client Portal sign-in page.
+
+### 3. Email via PHP (optional, internal notification)
 
 Set in `.env`:
 

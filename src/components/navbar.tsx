@@ -22,6 +22,7 @@ const navLinks = [
   { href: '/#services', label: 'Services' },
   { href: '/#partners', label: 'Partners' },
   { href: '/#consultation', label: 'Consultation' },
+  { href: '/portal', label: 'Portal' },
 ] as const;
 
 export function Navbar() {

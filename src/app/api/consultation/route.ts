@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import {
   validateBotSignals,
   verifyTurnstileToken,
@@ -14,6 +15,9 @@ import {
   isConsultationRateLimitEnabled,
 } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
+import { sendConsultationConfirmationEmail } from '@/lib/consultation-email';
+import { saveConsultationConfirmationResendEmailId } from '@/lib/consultation-email-delivery';
+import { findLinkedPortalUserIdByConsultationEmail } from '@/lib/portal-user';
 
 export const runtime = 'nodejs';
 
@@ -130,8 +134,12 @@ export async function POST(request: Request) {
 
   const data = formParsed.data;
 
+  let consultationRequestId: string;
+
   try {
-    await prisma.consultationRequest.create({
+    const portalUserId = await findLinkedPortalUserIdByConsultationEmail(data.email);
+
+    const consultation = await prisma.consultationRequest.create({
       data: {
         name: data.name,
         email: data.email,
@@ -140,14 +148,41 @@ export async function POST(request: Request) {
         preferredContact: data.preferredContact,
         company: data.company || null,
         message: data.message,
+        ...(portalUserId ? { portalUserId } : {}),
       },
+      select: { id: true },
     });
+    consultationRequestId = consultation.id;
   } catch (err) {
     console.error('Failed to save consultation request:', err);
     return NextResponse.json(
       { ok: false, error: 'Could not save your request. Please try again later.' },
       { status: 500 }
     );
+  }
+
+  const confirmation = await sendConsultationConfirmationEmail({
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    timezone: data.timezone,
+    preferredContact: data.preferredContact,
+    company: data.company,
+    message: data.message,
+  });
+
+  if (!confirmation.ok) {
+    if (confirmation.skipped) {
+      console.warn('Consultation confirmation email skipped (RESEND_API_KEY or CONSULTATION_CONFIRMATION_FROM not set)');
+    } else {
+      console.error('Consultation saved but confirmation email failed:', confirmation.error);
+    }
+  } else {
+    try {
+      await saveConsultationConfirmationResendEmailId(consultationRequestId, confirmation.resendEmailId);
+    } catch (err) {
+      console.error('Consultation saved but failed to store Resend email id:', err);
+    }
   }
 
   const mail = await forwardToMailHandler({
@@ -163,6 +198,8 @@ export async function POST(request: Request) {
   if (!mail.ok) {
     console.error('Consultation saved but mail forward failed:', mail.error);
   }
+
+  revalidatePath('/portal/admin', 'layout');
 
   return NextResponse.json({ ok: true });
 }
