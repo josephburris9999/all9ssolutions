@@ -39,19 +39,20 @@ function MessageBubble({
   timeZone: string | null;
   audience: PortalSupportAudience;
 }) {
-  const isClient = message.kind === 'REQUEST';
-  const senderLabel = isClient
+  const isClientMessage = message.kind === 'REQUEST';
+  const senderLabel = isClientMessage
     ? audience === 'admin'
       ? 'Client'
       : 'You'
     : 'all9s Solutions';
   const timestamp = formatPortalSupportMessageTime(message.createdAt, timeZone);
+  const alignEnd = audience === 'admin' ? !isClientMessage : isClientMessage;
 
   return (
-    <div className={`flex ${isClient ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${alignEnd ? 'justify-end' : 'justify-start'}`}>
       <div
         className={`max-w-[85%] rounded-2xl border px-4 py-3 ${
-          isClient
+          isClientMessage
             ? 'border-primary/30 bg-primary/10'
             : 'border-border bg-secondary/40'
         }`}
@@ -213,7 +214,15 @@ export function PortalSupportSection({
               maxLength={PORTAL_SUPPORT_MESSAGE_MAX_LENGTH}
               disabled={isSubmitting}
               className="border-border bg-secondary/30 text-foreground"
+              aria-describedby="portal-support-message-count"
             />
+            <p
+              id="portal-support-message-count"
+              className="text-right text-xs text-muted-foreground tabular-nums"
+              aria-live="polite"
+            >
+              {body.length.toLocaleString()} / {PORTAL_SUPPORT_MESSAGE_MAX_LENGTH.toLocaleString()}
+            </p>
           </div>
           <Button type="submit" disabled={isSubmitting || body.trim().length < 10}>
             <Send className="size-4" aria-hidden />

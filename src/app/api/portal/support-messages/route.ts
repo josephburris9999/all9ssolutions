@@ -5,9 +5,14 @@ import {
   hasClientAgreementForConsultation,
   resolveConsultationRequestIdForProject,
 } from '@/lib/client-agreement-store';
-import { portalUserOwnsProject } from '@/lib/portal-project-access';
+import { isPortalAdminRole } from '@/lib/portal-role-data';
 import { listProjectAgreementsForPortalUser } from '@/lib/project-agreement-store';
-import { createPortalSupportMessage, getPortalSupportThread } from '@/lib/portal-support';
+import {
+  createPortalClientSupportMessage,
+  createPortalProviderSupportMessage,
+  getPortalSupportThread,
+  resolvePortalSupportProjectForSession,
+} from '@/lib/portal-support';
 import { portalSupportMessageSchema } from '@/lib/portal-support-schema';
 import {
   checkRateLimit,
@@ -18,72 +23,44 @@ import {
 
 export const runtime = 'nodejs';
 
-async function resolveOwnedProjectId(portalUserId: string, projectId: string | undefined) {
-  const trimmed = projectId?.trim();
-  if (!trimmed) {
-    return {
-      error: NextResponse.json({ ok: false, error: 'Project is required' }, { status: 400 }),
-    };
-  }
-
-  if (!(await portalUserOwnsProject(portalUserId, trimmed))) {
-    return {
-      error: NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 }),
-    };
-  }
-
-  return { projectId: trimmed };
+function jsonError(message: string, status: number) {
+  return NextResponse.json({ ok: false, error: message }, { status });
 }
 
 async function requireSignedProjectAgreements(portalUserId: string, projectId: string) {
   const consultationRequestId = await resolveConsultationRequestIdForProject(portalUserId, projectId);
   if (!consultationRequestId) {
-    return {
-      error: NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 }),
-    };
+    return jsonError('Project not found', 404);
   }
 
   if (!(await hasClientAgreementForConsultation(consultationRequestId))) {
-    return {
-      error: NextResponse.json(
-        {
-          ok: false,
-          error: 'Sign the Client Service Agreement for this consultation before sending messages.',
-        },
-        { status: 403 }
-      ),
-    };
+    return jsonError(
+      'Sign the Client Service Agreement for this consultation before sending messages.',
+      403
+    );
   }
 
   const agreements = await listProjectAgreementsForPortalUser(portalUserId, projectId);
   if (!areAllProjectAgreementsSigned(agreements)) {
-    return {
-      error: NextResponse.json(
-        {
-          ok: false,
-          error: 'Sign all project agreements before sending messages for this project.',
-        },
-        { status: 403 }
-      ),
-    };
+    return jsonError('Sign all project agreements before sending messages for this project.', 403);
   }
 
-  return { ok: true as const };
+  return null;
 }
 
 export async function GET(request: Request) {
   const session = await getPortalSession();
   if (!session) {
-    return NextResponse.json({ ok: false, error: 'You must be signed in' }, { status: 401 });
+    return jsonError('You must be signed in', 401);
   }
 
   const queryProjectId = new URL(request.url).searchParams.get('projectId') ?? undefined;
-  const project = await resolveOwnedProjectId(session.userId, queryProjectId);
-  if ('error' in project && project.error) {
-    return project.error;
+  const access = await resolvePortalSupportProjectForSession(session, queryProjectId);
+  if (!access.ok) {
+    return jsonError(access.error, access.status);
   }
 
-  const thread = await getPortalSupportThread(session.userId, project.projectId);
+  const thread = await getPortalSupportThread(access.clientPortalUserId, access.projectId);
 
   return NextResponse.json({
     ok: true,
@@ -95,7 +72,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await getPortalSession();
   if (!session) {
-    return NextResponse.json({ ok: false, error: 'You must be signed in' }, { status: 401 });
+    return jsonError('You must be signed in', 401);
   }
 
   const ip = getClientIp(request.headers);
@@ -103,10 +80,7 @@ export async function POST(request: Request) {
     const burst = checkRateLimit(`portal-support:${session.userId}:${ip}`, 20, 15 * 60 * 1000);
     if (!burst.allowed) {
       const retry = formatRetryAfter(burst.retryAfterSeconds);
-      return NextResponse.json(
-        { ok: false, error: `Too many messages. Please try again in ${retry}.` },
-        { status: 429, headers: { 'Retry-After': String(burst.retryAfterSeconds) } }
-      );
+      return jsonError(`Too many messages. Please try again in ${retry}.`, 429);
     }
   }
 
@@ -114,31 +88,34 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: 'Invalid request body' }, { status: 400 });
+    return jsonError('Invalid request body', 400);
   }
 
   const parsed = portalSupportMessageSchema.safeParse(body);
   if (!parsed.success) {
     const message = parsed.error.issues[0]?.message ?? 'Invalid message';
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    return jsonError(message, 400);
   }
 
-  const project = await resolveOwnedProjectId(session.userId, parsed.data.projectId);
-  if ('error' in project && project.error) {
-    return project.error;
+  const access = await resolvePortalSupportProjectForSession(session, parsed.data.projectId);
+  if (!access.ok) {
+    return jsonError(access.error, access.status);
   }
 
-  const signed = await requireSignedProjectAgreements(session.userId, project.projectId);
-  if ('error' in signed && signed.error) {
-    return signed.error;
+  const isAdmin = isPortalAdminRole(session.role);
+
+  if (!isAdmin) {
+    const agreementError = await requireSignedProjectAgreements(session.userId, access.projectId);
+    if (agreementError) {
+      return agreementError;
+    }
   }
 
   try {
-    const result = await createPortalSupportMessage(
-      session.userId,
-      parsed.data.body,
-      project.projectId
-    );
+    const result = isAdmin
+      ? await createPortalProviderSupportMessage(access.projectId, parsed.data.body)
+      : await createPortalClientSupportMessage(access.projectId, parsed.data.body);
+
     return NextResponse.json({
       ok: true,
       progressId: result.progressId,
@@ -146,9 +123,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Failed to save portal support message:', error);
-    return NextResponse.json(
-      { ok: false, error: 'Could not send your message. Please try again later.' },
-      { status: 500 }
-    );
+    return jsonError('Could not send your message. Please try again later.', 500);
   }
 }
