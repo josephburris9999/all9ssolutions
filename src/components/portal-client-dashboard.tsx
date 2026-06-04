@@ -142,7 +142,7 @@ export function PortalClientDashboard({
 
           <section className="relative bg-secondary/30 px-[1.25rem] py-24">
             <div className="container mx-auto px-4">
-              <PortalAmountDueSection amounts={amountSummary} showPaymentActions />
+              <PortalAmountDueSection amounts={amountSummary} showPaymentActions ledgerLayout />
             </div>
           </section>
 
@@ -199,6 +199,7 @@ export function PortalClientDashboard({
                   <PortalAmountDueSection
                     amounts={amountSummary}
                     showPaymentActions={!consultationRequestId}
+                    ledgerLayout
                   />
                 </div>
               </section>

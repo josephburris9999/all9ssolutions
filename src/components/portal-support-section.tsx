@@ -224,10 +224,12 @@ export function PortalSupportSection({
               {body.length.toLocaleString()} / {PORTAL_SUPPORT_MESSAGE_MAX_LENGTH.toLocaleString()}
             </p>
           </div>
-          <Button type="submit" disabled={isSubmitting || body.trim().length < 10}>
-            <Send className="size-4" aria-hidden />
-            {isSubmitting ? 'Sending…' : 'Send message'}
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting || body.trim().length < 10}>
+              <Send className="size-4" aria-hidden />
+              {isSubmitting ? 'Sending…' : 'Send Message'}
+            </Button>
+          </div>
         </form>
       </div>
     </section>

@@ -92,7 +92,11 @@ type AccordionItemProps = React.HTMLAttributes<HTMLDivElement> & {
 
 function AccordionItem({ value, className, children, ...props }: AccordionItemProps) {
   return (
-    <div data-accordion-item={value} className={cn('rounded-lg border border-border bg-card', className)} {...props}>
+    <div
+      data-accordion-item={value}
+      className={cn('min-w-0 overflow-hidden rounded-lg border border-border bg-card', className)}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -108,13 +112,13 @@ function AccordionTrigger({ value, actions, className, children, ...props }: Acc
   const open = openValues.includes(value);
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 px-4 py-4">
+    <div className="flex w-full flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => toggle(value)}
         className={cn(
-          'flex min-w-0 flex-1 items-center justify-between gap-4 text-left text-sm transition-colors hover:text-primary',
+          'flex w-full min-w-0 items-center justify-between gap-4 text-left text-sm transition-colors hover:text-primary sm:flex-1',
           className
         )}
         {...props}
@@ -124,7 +128,11 @@ function AccordionTrigger({ value, actions, className, children, ...props }: Acc
           className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
         />
       </button>
-      {actions}
+      {actions ? (
+        <div className="w-full shrink-0 sm:w-auto [&_button]:w-full sm:[&_button]:w-auto [&_a]:w-full sm:[&_a]:w-auto">
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -140,7 +148,7 @@ function AccordionContent({ value, className, children, ...props }: AccordionCon
   if (!open) return null;
 
   return (
-    <div className={cn('border-t border-border px-4 pb-4 pt-4', className)} {...props}>
+    <div className={cn('min-w-0 border-t border-border px-4 pb-4 pt-4', className)} {...props}>
       {children}
     </div>
   );

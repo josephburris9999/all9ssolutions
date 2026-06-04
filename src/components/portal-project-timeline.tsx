@@ -1,14 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useMemo, type ReactNode } from 'react';
 import {
   formatTimelineDate,
   getTimelineProgressPercent,
@@ -21,8 +13,8 @@ type PortalProjectTimelineProps = {
   referenceNow: string;
   description?: string;
   emptyMessage?: string;
-  /** Admin portal: show Update estimated completion below timeline chart(s). */
-  showUpdateEstimatedCompletionButton?: boolean;
+  /** Optional actions rendered below the timeline charts (admin-only callers). */
+  actions?: ReactNode;
 };
 
 const CHART = {
@@ -196,9 +188,8 @@ export function PortalProjectTimeline({
   referenceNow,
   description,
   emptyMessage,
-  showUpdateEstimatedCompletionButton = false,
+  actions,
 }: PortalProjectTimelineProps) {
-  const [updateCompletionOpen, setUpdateCompletionOpen] = useState(false);
   const sectionDescription =
     description ??
     "View progress from your consultation date through the project's estimated completion date.";
@@ -223,30 +214,7 @@ export function PortalProjectTimeline({
         </div>
       )}
 
-      {showUpdateEstimatedCompletionButton && projects.length > 0 ? (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-2 w-full"
-            onClick={() => setUpdateCompletionOpen(true)}
-          >
-            Update estimated completion
-          </Button>
-          <Dialog open={updateCompletionOpen} onOpenChange={setUpdateCompletionOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Coming Soon</DialogTitle>
-              </DialogHeader>
-              <DialogFooter>
-                <Button type="button" onClick={() => setUpdateCompletionOpen(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </>
-      ) : null}
+      {actions}
     </section>
   );
 }

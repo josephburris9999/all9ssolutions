@@ -1,5 +1,11 @@
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+export const PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE =
+  'Completion date must be today or in the future';
+
+export const PROJECT_ESTIMATED_COMPLETION_REQUIRED_MESSAGE =
+  'Estimated completion date is required';
+
 /** Parse a date input (`YYYY-MM-DD`) or ISO datetime for estimated project completion. */
 export function parseEstimatedCompletionInput(value: string): Date | null {
   const trimmed = value.trim();
@@ -44,4 +50,66 @@ export function parseEstimatedCompletionInputOnServer(value: string): Date | nul
 
   const parsed = new Date(trimmed);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** Minimum allowed `<input type="date">` value (local calendar date). */
+export function getMinProjectDateInputValue(referenceDate = new Date()): string {
+  return formatDateInputValue(referenceDate);
+}
+
+/** Convert stored completion ISO to a date input value in the local calendar. */
+export function estimatedCompletionIsoToDateInput(iso: string | null | undefined): string {
+  if (!iso) {
+    return '';
+  }
+
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return formatDateInputValue(parsed);
+}
+
+function startOfLocalCalendarDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Client-side guard for project completion dates (today or future in local time). */
+export function isEstimatedCompletionDateAllowed(
+  value: string,
+  referenceDate = new Date()
+): boolean {
+  const parsed = parseEstimatedCompletionInput(value);
+  if (!parsed) {
+    return false;
+  }
+
+  return (
+    startOfLocalCalendarDay(parsed).getTime() >= startOfLocalCalendarDay(referenceDate).getTime()
+  );
+}
+
+function startOfUtcCalendarDay(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+/** Server-side guard for project completion dates (today or future in UTC). */
+export function isEstimatedCompletionDateAllowedOnServer(
+  value: string,
+  referenceDate = new Date()
+): boolean {
+  const parsed = parseEstimatedCompletionInputOnServer(value);
+  if (!parsed) {
+    return false;
+  }
+
+  return startOfUtcCalendarDay(parsed) >= startOfUtcCalendarDay(referenceDate);
 }

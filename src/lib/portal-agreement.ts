@@ -5,6 +5,9 @@ export const PORTAL_AGREEMENT_VERSION = '2026-05-31';
 
 export const PORTAL_AGREEMENT_TITLE = 'all9s Solutions – Client Service Agreement';
 
+/** Shorter label for portal cards where the full title would overflow. */
+export const PORTAL_AGREEMENT_TITLE_SHORT = 'Client Service Agreement';
+
 export const PORTAL_AGREEMENT_COMPANY = {
   name: 'all9s Solutions',
   email: 'hello@all9ssolutions.com',

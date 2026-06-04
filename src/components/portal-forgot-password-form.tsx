@@ -120,7 +120,7 @@ export function PortalForgotPasswordForm() {
                   )}
                 />
                 <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending…' : 'Send reset link'}
+                  {isSubmitting ? 'Sending…' : 'Send Reset Link'}
                 </Button>
               </form>
             </Form>

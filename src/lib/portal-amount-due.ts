@@ -2,51 +2,111 @@ import 'server-only';
 
 import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
-import type { PortalAmountSummary } from '@/lib/portal-amount-due-data';
+import {
+  sumAmountDueLineItems,
+  type PortalAmountDueLineItem,
+  type PortalAmountSummary,
+} from '@/lib/portal-amount-due-data';
 
 const ACTIVE_PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'ON_HOLD'] as const;
 
-type ProjectAmountRow = {
+const DEFAULT_AMOUNT_DUE_DESCRIPTION = 'Amount due';
+
+type ProjectTotalsRow = {
   depositAmount: number;
-  amountDue: number;
   paidAmount: number;
 };
 
-function summarizeAmountRows(rows: ProjectAmountRow[]): PortalAmountSummary {
-  return rows.reduce(
-    (totals, row) => ({
-      depositAmount: totals.depositAmount + Number(row.depositAmount),
-      amountDue: totals.amountDue + Number(row.amountDue),
-      paidAmount: totals.paidAmount + Number(row.paidAmount),
-    }),
-    { depositAmount: 0, amountDue: 0, paidAmount: 0 }
-  );
+function mapLineItem(row: {
+  id: string;
+  amount: number;
+  description: string;
+}): PortalAmountDueLineItem {
+  return {
+    id: row.id,
+    amount: Number(row.amount),
+    description: row.description,
+  };
 }
 
-/** Totals for deposit, due, and paid across active projects (unset/null counts as $0). */
+function summarizeTotals(rows: ProjectTotalsRow[], lineItems: PortalAmountDueLineItem[]): PortalAmountSummary {
+  const depositAmount = rows.reduce((total, row) => total + Number(row.depositAmount), 0);
+  const paidAmount = rows.reduce((total, row) => total + Number(row.paidAmount), 0);
+
+  return {
+    depositAmount,
+    paidAmount,
+    lineItems,
+    amountDue: sumAmountDueLineItems(lineItems),
+  };
+}
+
+async function listAmountDueLineItemsForProjects(projectIds: string[]): Promise<PortalAmountDueLineItem[]> {
+  if (projectIds.length === 0) {
+    return [];
+  }
+
+  const rows = await prisma.projectAmountDueItem.findMany({
+    where: { projectId: { in: projectIds } },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      amount: true,
+      description: true,
+    },
+  });
+
+  return rows.map(mapLineItem);
+}
+
+/** Totals for deposit and paid on Project; due amounts from line items. */
 export async function getPortalAmountSummary(
   portalUserId: string,
   projectId?: string | null
 ): Promise<PortalAmountSummary> {
-  const rows = projectId
-    ? await prisma.$queryRaw<ProjectAmountRow[]>(Prisma.sql`
+  const projectRows = projectId
+    ? await prisma.$queryRaw<Array<{ id: string } & ProjectTotalsRow>>(Prisma.sql`
         SELECT
+          id,
           COALESCE("depositAmount", 0)::float8 AS "depositAmount",
-          COALESCE("amountDue", 0)::float8 AS "amountDue",
           COALESCE("paidAmount", 0)::float8 AS "paidAmount"
         FROM "Project"
         WHERE "portalUserId" = ${portalUserId}
           AND id = ${projectId}
       `)
-    : await prisma.$queryRaw<ProjectAmountRow[]>(Prisma.sql`
+    : await prisma.$queryRaw<Array<{ id: string } & ProjectTotalsRow>>(Prisma.sql`
         SELECT
+          id,
           COALESCE("depositAmount", 0)::float8 AS "depositAmount",
-          COALESCE("amountDue", 0)::float8 AS "amountDue",
           COALESCE("paidAmount", 0)::float8 AS "paidAmount"
         FROM "Project"
         WHERE "portalUserId" = ${portalUserId}
           AND "status"::text IN (${Prisma.join(ACTIVE_PROJECT_STATUSES)})
       `);
 
-  return summarizeAmountRows(rows);
+  const projectIds = projectRows.map((row) => row.id);
+  const lineItems = await listAmountDueLineItemsForProjects(projectIds);
+
+  return summarizeTotals(projectRows, lineItems);
+}
+
+export async function createProjectAmountDueItem(options: {
+  projectId: string;
+  amount: number;
+  description: string;
+}): Promise<PortalAmountDueLineItem> {
+  const row = await prisma.projectAmountDueItem.create({
+    data: {
+      projectId: options.projectId,
+      amount: options.amount,
+      description: options.description.trim().slice(0, 255) || DEFAULT_AMOUNT_DUE_DESCRIPTION,
+    },
+    select: {
+      id: true,
+      amount: true,
+      description: true,
+    },
+  });
+
+  return mapLineItem(row);
 }

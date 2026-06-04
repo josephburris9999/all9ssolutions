@@ -35,7 +35,7 @@ function formatPhoneDisplay(phone: string | null): string {
 export function PortalAdminConsultationDetailSection({
   consultation,
   backHref = '/portal/admin/clients/consultations',
-  backLabel = 'Back to consultations',
+  backLabel = 'Back to Consultations',
 }: PortalAdminConsultationDetailSectionProps) {
   return (
     <section className="mt-12" aria-labelledby="portal-admin-consultation-detail-heading">

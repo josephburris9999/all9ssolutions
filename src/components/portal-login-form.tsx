@@ -134,7 +134,7 @@ export function PortalLoginForm({ requirePasswordChange = false }: PortalLoginFo
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <LogIn className="h-6 w-6" aria-hidden />
               </div>
-              <h2 className="text-2xl font-bold text-foreground">Sign in</h2>
+              <h2 className="text-2xl font-bold text-foreground">Sign In</h2>
               <p className="mt-2 text-sm text-muted-foreground">Use your client portal credentials</p>
             </div>
 
@@ -183,7 +183,7 @@ export function PortalLoginForm({ requirePasswordChange = false }: PortalLoginFo
                   )}
                 />
                 <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                  {isSubmitting ? 'Signing in…' : 'Sign in'}
+                  {isSubmitting ? 'Signing In…' : 'Sign In'}
                 </Button>
               </form>
             </Form>

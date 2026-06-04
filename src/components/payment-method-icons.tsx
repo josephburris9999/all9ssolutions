@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 
 type PaymentMethodIconsProps = {
   className?: string;
+  /** Row of icons (wraps when narrow) or fixed grid below a full-width action. */
+  layout?: 'row' | 'grid';
 };
 
 function IconFrame({
@@ -28,9 +30,17 @@ function IconFrame({
   );
 }
 
-export function PaymentMethodIcons({ className }: PaymentMethodIconsProps) {
+export function PaymentMethodIcons({ className, layout = 'row' }: PaymentMethodIconsProps) {
   return (
-    <div className={cn('flex items-center gap-2', className)} aria-label="Accepted payment methods">
+    <div
+      className={cn(
+        layout === 'grid'
+          ? 'grid w-full grid-cols-3 gap-2 sm:grid-cols-6'
+          : 'flex min-w-0 flex-wrap items-center gap-2',
+        className
+      )}
+      aria-label="Accepted payment methods"
+    >
       <IconFrame label="Visa">
         <svg viewBox="0 0 48 16" className="h-3.5 w-auto" aria-hidden>
           <text x="2" y="12" fill="currentColor" className="fill-[#1A1F71] text-[11px] font-bold">

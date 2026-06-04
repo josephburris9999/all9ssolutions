@@ -68,6 +68,7 @@ const EMPTY_AMOUNT_SUMMARY: PortalAmountSummary = {
   depositAmount: 0,
   amountDue: 0,
   paidAmount: 0,
+  lineItems: [],
 };
 
 const EMPTY_SUPPORT_THREAD: PortalSupportThread = {

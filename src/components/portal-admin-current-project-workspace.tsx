@@ -1,7 +1,7 @@
+import { PortalAdminAmountDueSection } from '@/components/portal-admin-amount-due-section';
+import { PortalAdminProjectTimelineSection } from '@/components/portal-admin-project-timeline-section';
 import { PortalAgreementSection } from '@/components/portal-agreement-section';
-import { PortalAmountDueSection } from '@/components/portal-amount-due-section';
 import { PortalContentUploadSection } from '@/components/portal-content-upload-section';
-import { PortalProjectTimeline } from '@/components/portal-project-timeline';
 import { PortalSupportSection } from '@/components/portal-support-section';
 import type { PortalAdminCurrentProjectWorkspace } from '@/lib/portal-admin-current-project-workspace';
 
@@ -48,19 +48,19 @@ export function PortalAdminCurrentProjectWorkspaceSections({
 
       <section className="relative bg-background px-[1.25rem] py-24">
         <div className="container mx-auto px-4">
-          <PortalProjectTimeline
+          <PortalAdminProjectTimelineSection
             projects={projectTimelines}
             referenceNow={timelineReferenceNow}
+            projectId={projectId}
             description="View progress from the client's consultation date through the project's estimated completion date."
             emptyMessage="The project timeline will appear here once a consultation is linked to this client's account."
-            showUpdateEstimatedCompletionButton
           />
         </div>
       </section>
 
       <section className="relative bg-secondary/30 px-[1.25rem] py-24">
         <div className="container mx-auto px-4">
-          <PortalAmountDueSection amounts={amountSummary} showPaymentActions={false} />
+          <PortalAdminAmountDueSection amounts={amountSummary} projectId={projectId} />
         </div>
       </section>
 

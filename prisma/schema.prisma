@@ -112,7 +112,6 @@ model Project {
   status                ProjectStatus  @default(ACTIVE)
   estimatedCompletionAt DateTime?      @db.Timestamptz(3)
   depositAmount         Float          @default(0) @db.DoublePrecision
-  amountDue             Float          @default(0) @db.DoublePrecision
   paidAmount            Float          @default(0) @db.DoublePrecision
   design                String         @db.VarChar(20000)
   createdAt             DateTime       @default(now())
@@ -120,12 +119,27 @@ model Project {
   portalUser            PortalUser     @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
   consultationRequest   ConsultationRequest @relation(fields: [consultationRequestId], references: [id], onDelete: Restrict)
   agreements            ProjectAgreement[]
+  amountDueItems        ProjectAmountDueItem[]
   contentUploads        PortalContentUpload[]
   progressRecords       Progress[]
 
   @@index([portalUserId])
   @@index([portalUserId, status])
   @@index([estimatedCompletionAt])
+}
+
+/// Line-item amounts due for a project (many per Project). Deposit and paid totals stay on Project.
+model ProjectAmountDueItem {
+  id          String   @id @default(cuid()) @db.VarChar(30)
+  projectId   String   @db.VarChar(30)
+  amount      Float    @db.DoublePrecision
+  description String   @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, createdAt])
 }
 
 /// Client engagement tracked in the portal (many per Project).

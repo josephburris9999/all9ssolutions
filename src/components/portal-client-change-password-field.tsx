@@ -28,7 +28,7 @@ export function PortalClientChangePasswordField({
     <>
       <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => setDialogOpen(true)}>
         <KeyRound className="h-4 w-4 shrink-0" aria-hidden />
-        Reset password
+        Reset Password
       </Button>
       <PortalChangePasswordDialog
         open={dialogOpen}

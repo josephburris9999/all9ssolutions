@@ -2,7 +2,12 @@ import 'server-only';
 
 import { z } from 'zod';
 import { createProjectForConsultationSchema } from '@/lib/portal-admin-create-project-schema';
-import { parseEstimatedCompletionInputOnServer } from '@/lib/portal-project-estimated-completion';
+import {
+  isEstimatedCompletionDateAllowedOnServer,
+  parseEstimatedCompletionInputOnServer,
+  PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE,
+} from '@/lib/portal-project-estimated-completion';
+import { createProjectAmountDueItem } from '@/lib/portal-amount-due';
 import { createPortalProject } from '@/lib/portal-project';
 import {
   PortalUserProvisionError,
@@ -25,6 +30,14 @@ const createProjectForConsultationInputSchema = createProjectForConsultationSche
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Enter a valid completion date',
+        });
+        return z.NEVER;
+      }
+
+      if (!isEstimatedCompletionDateAllowedOnServer(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE,
         });
         return z.NEVER;
       }
@@ -119,10 +132,17 @@ export async function createProjectForConsultation(
     title,
     estimatedCompletionAt: input.estimatedCompletionAt,
     depositAmount: input.depositAmount,
-    amountDue: input.amountDue,
     design: input.design,
     status: 'ACTIVE',
   });
+
+  if (input.amountDue != null && input.amountDue > 0) {
+    await createProjectAmountDueItem({
+      projectId: project.id,
+      amount: input.amountDue,
+      description: 'Amount due',
+    });
+  }
 
   return {
     project,

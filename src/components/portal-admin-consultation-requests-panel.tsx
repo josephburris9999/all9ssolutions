@@ -20,7 +20,7 @@ import {
 } from '@/lib/portal-admin-client-display';
 import type { PortalConsultationRequestDetail } from '@/lib/portal-consultation-requests-data';
 import { createProjectFormSchema, PROJECT_DESIGN_MAX_LENGTH } from '@/lib/portal-admin-create-project-schema';
-import { estimatedCompletionInputToIso } from '@/lib/portal-project-estimated-completion';
+import { estimatedCompletionInputToIso, getMinProjectDateInputValue } from '@/lib/portal-project-estimated-completion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
@@ -216,6 +216,7 @@ function CreateProjectForm({ request }: { request: PortalConsultationRequestDeta
           <Input
             id={`project-completion-${request.id}`}
             type="date"
+            min={getMinProjectDateInputValue()}
             value={estimatedCompletionDate}
             onChange={(event) => {
               setEstimatedCompletionDate(event.target.value);
@@ -308,7 +309,7 @@ function CreateProjectForm({ request }: { request: PortalConsultationRequestDeta
         ) : null}
       </div>
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Creating…' : 'Create project'}
+        {isSubmitting ? 'Creating…' : 'Create Project'}
       </Button>
     </form>
   );

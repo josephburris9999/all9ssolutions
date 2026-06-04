@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  isEstimatedCompletionDateAllowed,
+  parseEstimatedCompletionInput,
+  PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE,
+} from '@/lib/portal-project-estimated-completion';
 
 export const PROJECT_DESIGN_MAX_LENGTH = 20000;
 
@@ -26,7 +31,28 @@ const optionalMoneyStringSchema = z
 
 export const createProjectFormSchema = z.object({
   title: z.string().trim().min(1, 'Project title is required').max(200),
-  estimatedCompletionDate: z.string().trim().optional().default(''),
+  estimatedCompletionDate: z
+    .string()
+    .trim()
+    .optional()
+    .default('')
+    .superRefine((value, ctx) => {
+      if (!value || value.trim().length === 0) {
+        return;
+      }
+
+      if (!parseEstimatedCompletionInput(value)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid completion date' });
+        return;
+      }
+
+      if (!isEstimatedCompletionDateAllowed(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE,
+        });
+      }
+    }),
   depositAmount: optionalMoneyStringSchema,
   amountDue: optionalMoneyStringSchema,
   design: z

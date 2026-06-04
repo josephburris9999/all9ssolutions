@@ -236,7 +236,7 @@ export function PortalConsultationAgreementSignDialog({
               form="consultation-agreement-sign-form"
               disabled={isSubmitting || !accepted || signerName.trim().length < 2}
             >
-              {isSubmitting ? 'Signing…' : 'Sign agreement'}
+              {isSubmitting ? 'Signing…' : 'Sign Agreement'}
             </Button>
           )}
         </div>

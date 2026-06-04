@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   formatPortalAdminConsultationDate,
+  formatPortalAdminConsultationTableDate,
   formatPortalAdminPreferredContact,
 } from '@/lib/portal-admin-client-display';
 import type {
@@ -19,6 +20,7 @@ import type {
 } from '@/lib/portal-consultation-requests-data';
 import { portalProjectDashboardHref } from '@/lib/portal-role-data';
 import { formatPhoneNumber } from '@/lib/phone';
+import { cn } from '@/lib/utils';
 import { PortalConsultationRequestAgreementRow } from '@/components/portal-consultation-request-agreement-row';
 import { ConsultationEmailDeliveryBadge } from '@/components/consultation-email-delivery-badge';
 import type { PortalClientProfile } from '@/lib/portal-user';
@@ -72,53 +74,97 @@ function requestAccordionValue(requestId: string): string {
 function RequestFields({
   request,
   linkEmail = true,
+  compact = false,
 }: {
   request: PortalConsultationRequestDetail;
   linkEmail?: boolean;
+  compact?: boolean;
 }) {
+  const valueClass = compact ? 'min-w-0 truncate text-foreground' : 'text-foreground';
+  const fieldClass = compact
+    ? 'min-w-0 w-full space-y-1 sm:min-w-[10rem] sm:w-auto sm:flex-[1_1_11rem]'
+    : 'min-w-[10rem] flex-[1_1_11rem] space-y-1';
+
   return (
-    <dl className="flex flex-wrap gap-x-6 gap-y-4 text-sm">
-      <div className="min-w-[10rem] flex-[1_1_11rem] space-y-1">
+    <dl
+      className={
+        compact
+          ? 'flex min-w-0 flex-col gap-y-4 text-sm sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-4'
+          : 'flex flex-wrap gap-x-6 gap-y-4 text-sm'
+      }
+    >
+      <div className={fieldClass}>
         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</dt>
-        <dd className="text-foreground">{request.name.trim() || '—'}</dd>
+        <dd className={valueClass} title={compact ? request.name.trim() || undefined : undefined}>
+          {request.name.trim() || '—'}
+        </dd>
       </div>
-      <div className="min-w-[10rem] flex-[1_1_11rem] space-y-1">
+      <div className={fieldClass}>
         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Company</dt>
-        <dd className="text-foreground">{request.company ?? '—'}</dd>
+        <dd className={valueClass} title={compact ? request.company ?? undefined : undefined}>
+          {request.company ?? '—'}
+        </dd>
       </div>
-      <div className="min-w-[10rem] flex-[1_1_11rem] space-y-1">
+      <div className={fieldClass}>
         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</dt>
-        <dd className="text-foreground">
-          <span className="inline-flex flex-wrap items-center gap-2">
+        <dd className={compact ? 'min-w-0 text-foreground' : 'text-foreground'}>
+          <span
+            className={
+              compact
+                ? 'flex min-w-0 flex-col items-start gap-1 sm:inline-flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-2'
+                : 'inline-flex flex-wrap items-center gap-2'
+            }
+          >
             {linkEmail ? (
               <a
                 href={`mailto:${encodeURIComponent(request.email)}`}
-                className="transition-colors hover:text-primary"
+                className={cn(
+                  'transition-colors hover:text-primary',
+                  compact && 'min-w-0 max-w-full truncate'
+                )}
+                title={compact ? request.email : undefined}
               >
                 {request.email}
               </a>
             ) : (
-              request.email
+              <span className="min-w-0 max-w-full truncate" title={request.email}>
+                {request.email}
+              </span>
             )}
             <ConsultationEmailDeliveryBadge status={request.emailDeliveryStatus} />
           </span>
         </dd>
       </div>
-      <div className="min-w-[10rem] flex-[1_1_11rem] space-y-1">
+      <div className={fieldClass}>
         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</dt>
-        <dd className="text-foreground">{formatPhoneDisplay(request.phone)}</dd>
+        <dd className={valueClass} title={compact ? formatPhoneDisplay(request.phone) : undefined}>
+          {formatPhoneDisplay(request.phone)}
+        </dd>
       </div>
-      <div className="min-w-[10rem] flex-[1_1_11rem] space-y-1">
-        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preferred</dt>
-        <dd className="text-foreground">{formatPortalAdminPreferredContact(request.preferredContact)}</dd>
+      <div className={fieldClass}>
+        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {compact ? 'Contact' : 'Preferred'}
+        </dt>
+        <dd className={valueClass}>{formatPortalAdminPreferredContact(request.preferredContact)}</dd>
       </div>
-      <div className="min-w-[10rem] flex-[1_1_11rem] space-y-1">
+      <div className={fieldClass}>
         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timezone</dt>
-        <dd className="text-foreground">{request.timezone ?? '—'}</dd>
+        <dd className={valueClass} title={compact ? request.timezone ?? undefined : undefined}>
+          {request.timezone ?? '—'}
+        </dd>
       </div>
-      <div className="min-w-full basis-full space-y-1">
+      <div className="min-w-0 w-full basis-full space-y-1">
         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Request</dt>
-        <dd className="whitespace-pre-wrap leading-relaxed text-foreground">{request.message}</dd>
+        <dd
+          className={
+            compact
+              ? 'line-clamp-4 min-w-0 break-words text-foreground'
+              : 'whitespace-pre-wrap leading-relaxed text-foreground'
+          }
+          title={compact ? request.message : undefined}
+        >
+          {request.message}
+        </dd>
       </div>
     </dl>
   );
@@ -161,8 +207,15 @@ export function PortalConsultationRequestsAccordion({
         const value = requestAccordionValue(request.id);
         const summaryParts = [request.name.trim(), request.company?.trim()].filter(Boolean);
         const summary = summaryParts.join(' · ') || 'Consultation request';
-        const submittedLabel = formatPortalAdminConsultationDate(request.createdAt);
+        const submittedLabel = clientProfile
+          ? formatPortalAdminConsultationTableDate(request.createdAt)
+          : formatPortalAdminConsultationDate(request.createdAt);
         const linkedProject = resolveRequestProject(request, linkedProjects);
+        const subtitleParts = [`Submitted ${submittedLabel}`];
+        if (linkedProject?.projectTitle) {
+          subtitleParts.push(linkedProject.projectTitle);
+        }
+        const subtitle = subtitleParts.join(' · ');
         const projectHref =
           projectDashboardBasePath && linkedProject
             ? portalProjectDashboardHref(projectDashboardBasePath, linkedProject.projectId)
@@ -175,21 +228,25 @@ export function PortalConsultationRequestsAccordion({
               actions={
                 projectHref ? (
                   <Button asChild variant="outline" size="sm" className="shrink-0">
-                    <Link href={projectHref}>Open project</Link>
+                    <Link href={projectHref}>Open Project</Link>
                   </Button>
                 ) : undefined
               }
             >
-              <span className="flex min-w-0 flex-col items-start gap-0.5 text-left">
-                <span className="font-medium">{summary}</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  Submitted {submittedLabel}
-                  {linkedProject?.projectTitle ? ` · ${linkedProject.projectTitle}` : ''}
+              <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
+                <span className="w-full truncate font-medium" title={summary}>
+                  {summary}
+                </span>
+                <span
+                  className="w-full truncate text-xs font-normal text-muted-foreground"
+                  title={subtitle}
+                >
+                  {subtitle}
                 </span>
               </span>
             </AccordionTrigger>
             <AccordionContent value={value}>
-              <RequestFields request={request} linkEmail={!clientProfile} />
+              <RequestFields request={request} linkEmail={!clientProfile} compact={Boolean(clientProfile)} />
               {clientProfile ? (
                 <PortalConsultationRequestAgreementRow
                   agreement={request.clientServiceAgreement}

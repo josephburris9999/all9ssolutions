@@ -26,3 +26,6 @@ export const PORTAL_PASSWORD_MAX_LENGTH = 128;
 
 /** `PortalContentUpload.fileName` */
 export const PORTAL_UPLOAD_FILE_NAME_MAX_LENGTH = 255;
+
+/** `ProjectAmountDueItem.description` */
+export const PROJECT_AMOUNT_DUE_DESCRIPTION_MAX_LENGTH = 255;

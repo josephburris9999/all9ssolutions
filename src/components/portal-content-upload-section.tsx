@@ -146,7 +146,7 @@ export function PortalContentUploadSection({
   const sectionTitle = readOnly ? 'Uploaded Documents' : 'Share Documents';
 
   return (
-    <section className="w-full" aria-labelledby="portal-content-upload-heading">
+    <section className="mt-12 max-w-3xl" aria-labelledby="portal-content-upload-heading">
       <h2
         id="portal-content-upload-heading"
         className={cn('text-2xl font-bold text-foreground', readOnly ? 'mb-6' : 'mb-2')}
@@ -212,7 +212,7 @@ export function PortalContentUploadSection({
             </p>
           ) : null}
 
-          <div className="mb-6 w-full">
+          <div className="mb-6">
             <Button
               type="button"
               variant="outline"
@@ -221,7 +221,7 @@ export function PortalContentUploadSection({
               onClick={() => inputRef.current?.click()}
             >
               <Upload className="size-4" aria-hidden />
-              Choose files
+              Choose Files
             </Button>
           </div>
         </>

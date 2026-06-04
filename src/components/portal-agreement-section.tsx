@@ -306,7 +306,7 @@ function PortalAgreementCard({
             </div>
 
             <Button type="submit" disabled={isSubmitting || !accepted || signerName.trim().length < 2}>
-              {isSubmitting ? 'Signing…' : 'Sign agreement'}
+              {isSubmitting ? 'Signing…' : 'Sign Agreement'}
             </Button>
           </form>
         )}

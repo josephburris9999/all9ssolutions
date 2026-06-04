@@ -165,7 +165,7 @@ export function PortalResetPasswordForm() {
                 )}
               />
               <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving…' : 'Update password'}
+                {isSubmitting ? 'Saving…' : 'Update Password'}
               </Button>
             </form>
           </Form>

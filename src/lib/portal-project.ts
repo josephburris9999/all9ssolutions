@@ -7,7 +7,6 @@ export type CreatePortalProjectInput = {
   title: string;
   estimatedCompletionAt?: Date | null;
   depositAmount?: number;
-  amountDue?: number;
   design: string;
   status?: ProjectStatus;
 };
@@ -20,7 +19,6 @@ export async function createPortalProject(input: CreatePortalProjectInput) {
       title: input.title.trim(),
       estimatedCompletionAt: input.estimatedCompletionAt ?? null,
       depositAmount: input.depositAmount ?? 0,
-      amountDue: input.amountDue ?? 0,
       design: input.design.trim(),
       status: input.status ?? 'ACTIVE',
     },

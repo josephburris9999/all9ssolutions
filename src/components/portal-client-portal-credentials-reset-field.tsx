@@ -83,7 +83,7 @@ export function PortalClientPortalCredentialsResetField({
           disabled={isResetting}
           onClick={() => void handleResetCredentials()}
         >
-          {isResetting ? 'Resetting…' : 'Reset portal credentials'}
+          {isResetting ? 'Resetting…' : 'Reset Portal Credentials'}
         </Button>
       </dd>
     </div>

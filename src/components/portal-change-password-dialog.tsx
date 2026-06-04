@@ -99,7 +99,7 @@ export function PortalChangePasswordDialog({
       <DialogContent className="border-border sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-foreground">
-            {mustChangePassword ? 'Set your password' : 'Reset password'}
+            {mustChangePassword ? 'Set your password' : 'Reset Password'}
           </DialogTitle>
           <DialogDescription>
             {mustChangePassword
@@ -155,7 +155,7 @@ export function PortalChangePasswordDialog({
             />
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button type="submit" className="w-full sm:flex-1" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving…' : 'Save password'}
+                {isSubmitting ? 'Saving…' : 'Save Password'}
               </Button>
               <Button
                 type="button"
