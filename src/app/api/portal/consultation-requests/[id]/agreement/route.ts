@@ -125,6 +125,7 @@ export async function POST(request: Request, context: RouteContext) {
       name: clientProfile.name,
       signerName: agreement.signerName,
       signedAtLabel,
+      includeProjectCreationNotice: true,
       pdf,
     });
 

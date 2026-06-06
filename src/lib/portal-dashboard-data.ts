@@ -52,7 +52,6 @@ export type PortalDashboardView = {
   clientProfile: PortalClientProfile;
   clientTimezone: string | null;
   selectedProject: PortalProjectOption | null;
-  projectPickerHref: string | null;
   agreements: PortalAgreementListItem[];
   agreementStatus: PortalAgreementStatus;
   projectTimelines: PortalProjectTimelineData[];
@@ -89,6 +88,8 @@ function consultationProfile(context: PortalDashboardClientContext): PortalClien
     email: context.email.trim(),
     company: context.company?.trim() || null,
     phone: context.phone?.trim() || null,
+    timezone: consultationTimezone(context.timezone),
+    preferredContact: context.preferredContact ?? null,
   };
 }
 
@@ -295,7 +296,6 @@ function unsignedAgreementView(
     clientProfile,
     clientTimezone: consultationTimezone(context.timezone),
     selectedProject: null,
-    projectPickerHref: null,
     agreements: [],
     agreementStatus: buildPortalAgreementStatus(null),
     projectTimelines: [],
@@ -355,7 +355,6 @@ export async function loadPortalClientProjectsLandingView(
     clientProfile,
     clientTimezone,
     selectedProject: null,
-    projectPickerHref: null,
     agreements: [],
     agreementStatus: buildPortalAgreementStatus(null),
     projectTimelines: [],
@@ -372,7 +371,6 @@ export async function loadPortalDashboardView(
   context: PortalDashboardClientContext,
   options?: {
     selectedProject?: PortalProjectOption | null;
-    projectPickerHref?: string | null;
   }
 ): Promise<PortalDashboardView> {
   const consultation = await resolveConsultationHeroSource(context);
@@ -425,7 +423,6 @@ export async function loadPortalDashboardView(
     clientProfile,
     clientTimezone,
     selectedProject: options?.selectedProject ?? null,
-    projectPickerHref: options?.projectPickerHref ?? null,
     agreements,
     agreementStatus,
     projectTimelines,

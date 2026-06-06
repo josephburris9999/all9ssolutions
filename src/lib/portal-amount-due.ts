@@ -10,8 +10,6 @@ import {
 
 const ACTIVE_PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'ON_HOLD'] as const;
 
-const DEFAULT_AMOUNT_DUE_DESCRIPTION = 'Amount due';
-
 type ProjectTotalsRow = {
   depositAmount: number;
   paidAmount: number;
@@ -20,12 +18,12 @@ type ProjectTotalsRow = {
 function mapLineItem(row: {
   id: string;
   amount: number;
-  description: string;
+  title: string;
 }): PortalAmountDueLineItem {
   return {
     id: row.id,
     amount: Number(row.amount),
-    description: row.description,
+    description: row.title,
   };
 }
 
@@ -46,20 +44,20 @@ async function listAmountDueLineItemsForProjects(projectIds: string[]): Promise<
     return [];
   }
 
-  const rows = await prisma.projectAmountDueItem.findMany({
+  const rows = await prisma.projectAgreement.findMany({
     where: { projectId: { in: projectIds } },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       amount: true,
-      description: true,
+      title: true,
     },
   });
 
   return rows.map(mapLineItem);
 }
 
-/** Totals for deposit and paid on Project; due amounts from line items. */
+/** Totals for deposit and paid on Project; due amounts from project agreements. */
 export async function getPortalAmountSummary(
   portalUserId: string,
   projectId?: string | null
@@ -88,25 +86,4 @@ export async function getPortalAmountSummary(
   const lineItems = await listAmountDueLineItemsForProjects(projectIds);
 
   return summarizeTotals(projectRows, lineItems);
-}
-
-export async function createProjectAmountDueItem(options: {
-  projectId: string;
-  amount: number;
-  description: string;
-}): Promise<PortalAmountDueLineItem> {
-  const row = await prisma.projectAmountDueItem.create({
-    data: {
-      projectId: options.projectId,
-      amount: options.amount,
-      description: options.description.trim().slice(0, 255) || DEFAULT_AMOUNT_DUE_DESCRIPTION,
-    },
-    select: {
-      id: true,
-      amount: true,
-      description: true,
-    },
-  });
-
-  return mapLineItem(row);
 }

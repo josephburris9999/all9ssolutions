@@ -13,12 +13,14 @@ import {
   type PortalAdminClientCategoryCounts,
   type PortalAdminNavSection,
 } from '@/lib/portal-admin-nav';
+import type { PortalAdminUnreadMessagesState } from '@/contexts/portal-admin-unread-messages-context';
 
 type PortalAdminNavProps = {
   className?: string;
   collapsed?: boolean;
   pendingExpandSectionId?: string | null;
   clientCategoryCounts?: PortalAdminClientCategoryCounts;
+  unreadMessages?: PortalAdminUnreadMessagesState;
   onRequestExpand?: (sectionId?: string) => void;
   onPendingExpandHandled?: () => void;
   onNavigate?: () => void;
@@ -28,17 +30,34 @@ function formatNavBadgeCount(count: number): string {
   return count > 99 ? '99+' : String(count);
 }
 
-function NavCountBadge({ count, active }: { count: number; active?: boolean }) {
+function NavCountBadge({
+  count,
+  active,
+  alert = false,
+}: {
+  count: number;
+  active?: boolean;
+  alert?: boolean;
+}) {
   return (
     <span
       className={cn(
         'inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums leading-none',
-        active ? 'bg-primary/25 text-primary' : 'bg-primary/15 text-primary'
+        alert
+          ? 'bg-destructive text-destructive-foreground'
+          : active
+            ? 'bg-primary/25 text-primary'
+            : 'bg-primary/15 text-primary'
       )}
     >
       {formatNavBadgeCount(count)}
     </span>
   );
+}
+
+function isPortalAdminUnreadMessageLinkActive(pathname: string, href: string): boolean {
+  const basePath = href.split('#')[0]?.split('?')[0] ?? href;
+  return pathname === basePath;
 }
 
 function NavLink({
@@ -48,6 +67,7 @@ function NavLink({
   active,
   collapsed,
   badgeCount,
+  alert = false,
   onNavigate,
 }: {
   href: string;
@@ -56,6 +76,7 @@ function NavLink({
   active: boolean;
   collapsed?: boolean;
   badgeCount?: number;
+  alert?: boolean;
   onNavigate?: () => void;
 }) {
   const badgeLabel = badgeCount != null ? formatNavBadgeCount(badgeCount) : null;
@@ -94,9 +115,11 @@ function NavLink({
       className={cn(
         'block rounded-md text-sm transition-colors',
         collapsed ? 'px-2 py-2.5 text-center' : 'px-3 py-2',
-        active
-          ? 'bg-primary/10 font-medium text-primary'
-          : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+        alert
+          ? 'bg-destructive/15 font-medium text-destructive hover:bg-destructive/20'
+          : active
+            ? 'bg-primary/10 font-medium text-primary'
+            : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
       )}
     >
       {collapsed ? (
@@ -104,7 +127,7 @@ function NavLink({
       ) : (
         <span className="flex items-center justify-between gap-2">
           <span>{label}</span>
-          {badgeCount != null ? <NavCountBadge count={badgeCount} active={active} /> : null}
+          {badgeCount != null ? <NavCountBadge count={badgeCount} active={active} alert={alert} /> : null}
         </span>
       )}
     </Link>
@@ -117,6 +140,7 @@ function NavSection({
   expanded,
   collapsed,
   clientCategoryCounts,
+  unreadMessages,
   onToggle,
   onRequestExpand,
   onNavigate,
@@ -126,13 +150,25 @@ function NavSection({
   expanded: boolean;
   collapsed?: boolean;
   clientCategoryCounts?: PortalAdminClientCategoryCounts;
+  unreadMessages?: PortalAdminUnreadMessagesState;
   onToggle: () => void;
   onRequestExpand?: (sectionId?: string) => void;
   onNavigate?: () => void;
 }) {
   const Icon = section.icon;
   const hasChildren = Boolean(section.children?.length);
-  const sectionActive = portalAdminNavSectionHasActiveChild(pathname, section);
+  const sectionActive =
+    portalAdminNavSectionHasActiveChild(pathname, section) ||
+    (section.id === 'communication' &&
+      (unreadMessages?.projects.some((project) =>
+        isPortalAdminUnreadMessageLinkActive(pathname, project.href)
+      ) ??
+        false));
+  const hasUnviewedClientMessages =
+    section.id === 'communication' && Boolean(unreadMessages?.hasUnviewed);
+  const communicationAlertClassName = hasUnviewedClientMessages
+    ? 'bg-destructive/15 text-destructive hover:bg-destructive/20'
+    : undefined;
 
   if (!hasChildren && section.href) {
     const active = isPortalAdminNavLinkActive(pathname, section.href);
@@ -168,9 +204,10 @@ function NavSection({
         onClick={() => onRequestExpand?.(section.id)}
         className={cn(
           'flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-sm font-medium transition-colors',
-          sectionActive
-            ? 'bg-secondary/40 text-foreground'
-            : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+          communicationAlertClassName ??
+            (sectionActive
+              ? 'bg-secondary/40 text-foreground'
+              : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground')
         )}
       >
         <Icon className="h-4 w-4 shrink-0" aria-hidden />
@@ -186,9 +223,10 @@ function NavSection({
         onClick={onToggle}
         className={cn(
           'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors',
-          sectionActive
-            ? 'bg-secondary/40 text-foreground'
-            : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+          communicationAlertClassName ??
+            (sectionActive
+              ? 'bg-secondary/40 text-foreground'
+              : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground')
         )}
       >
         <Icon className="h-4 w-4 shrink-0" aria-hidden />
@@ -201,6 +239,19 @@ function NavSection({
 
       {expanded && section.children ? (
         <div className="ml-4 space-y-0.5 border-l border-border pl-3">
+          {section.id === 'communication' && unreadMessages?.projects.length
+            ? unreadMessages.projects.map((project) => (
+                <NavLink
+                  key={project.projectId}
+                  href={project.href}
+                  label={`${project.clientName} — ${project.projectTitle}`}
+                  active={isPortalAdminUnreadMessageLinkActive(pathname, project.href)}
+                  badgeCount={project.unviewedCount}
+                  alert
+                  onNavigate={onNavigate}
+                />
+              ))
+            : null}
           {section.children.map((child) => {
             const badgeCount =
               section.id === 'clients' && clientCategoryCounts && child.id in clientCategoryCounts
@@ -230,6 +281,7 @@ export function PortalAdminNav({
   collapsed = false,
   pendingExpandSectionId,
   clientCategoryCounts,
+  unreadMessages,
   onRequestExpand,
   onPendingExpandHandled,
   onNavigate,
@@ -258,6 +310,16 @@ export function PortalAdminNav({
     onPendingExpandHandled?.();
   }, [pendingExpandSectionId, onPendingExpandHandled]);
 
+  React.useEffect(() => {
+    if (!unreadMessages?.hasUnviewed) {
+      return;
+    }
+
+    setExpandedSections((current) =>
+      current.includes('communication') ? current : [...current, 'communication']
+    );
+  }, [unreadMessages?.hasUnviewed]);
+
   function toggleSection(sectionId: string) {
     setExpandedSections((current) =>
       current.includes(sectionId) ? current.filter((id) => id !== sectionId) : [...current, sectionId]
@@ -274,6 +336,7 @@ export function PortalAdminNav({
           expanded={expandedSections.includes(section.id)}
           collapsed={collapsed}
           clientCategoryCounts={clientCategoryCounts}
+          unreadMessages={unreadMessages}
           onToggle={() => toggleSection(section.id)}
           onRequestExpand={onRequestExpand}
           onNavigate={onNavigate}

@@ -3,6 +3,9 @@ const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 export const PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE =
   'Completion date must be today or in the future';
 
+export const PROJECT_ESTIMATED_COMPLETION_FUTURE_DATE_MESSAGE =
+  'Completion date must be in the future';
+
 export const PROJECT_ESTIMATED_COMPLETION_REQUIRED_MESSAGE =
   'Estimated completion date is required';
 
@@ -64,6 +67,13 @@ export function getMinProjectDateInputValue(referenceDate = new Date()): string 
   return formatDateInputValue(referenceDate);
 }
 
+/** Minimum allowed `<input type="date">` value for dates strictly after today. */
+export function getMinFutureProjectDateInputValue(referenceDate = new Date()): string {
+  const tomorrow = new Date(referenceDate);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return formatDateInputValue(tomorrow);
+}
+
 /** Convert stored completion ISO to a date input value in the local calendar. */
 export function estimatedCompletionIsoToDateInput(iso: string | null | undefined): string {
   if (!iso) {
@@ -97,6 +107,21 @@ export function isEstimatedCompletionDateAllowed(
   );
 }
 
+/** Client-side guard for project completion dates strictly after today in local time. */
+export function isFutureEstimatedCompletionDateAllowed(
+  value: string,
+  referenceDate = new Date()
+): boolean {
+  const parsed = parseEstimatedCompletionInput(value);
+  if (!parsed) {
+    return false;
+  }
+
+  return (
+    startOfLocalCalendarDay(parsed).getTime() > startOfLocalCalendarDay(referenceDate).getTime()
+  );
+}
+
 function startOfUtcCalendarDay(date: Date): number {
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
@@ -112,4 +137,17 @@ export function isEstimatedCompletionDateAllowedOnServer(
   }
 
   return startOfUtcCalendarDay(parsed) >= startOfUtcCalendarDay(referenceDate);
+}
+
+/** Server-side guard for project completion dates strictly after today in UTC. */
+export function isFutureEstimatedCompletionDateAllowedOnServer(
+  value: string,
+  referenceDate = new Date()
+): boolean {
+  const parsed = parseEstimatedCompletionInputOnServer(value);
+  if (!parsed) {
+    return false;
+  }
+
+  return startOfUtcCalendarDay(parsed) > startOfUtcCalendarDay(referenceDate);
 }

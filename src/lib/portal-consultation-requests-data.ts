@@ -24,6 +24,11 @@ export type PortalConsultationRequestDetail = {
   emailBouncedAt: string | null;
   /** Client Service Agreement for this consultation. */
   clientServiceAgreement: PortalConsultationRequestAgreement;
+  /** Admin client discussion notes; null until first save. */
+  clientDiscussion: {
+    body: string;
+    updatedAt: string;
+  } | null;
 };
 
 /** Project linked to a consultation request (for UI fallbacks). */

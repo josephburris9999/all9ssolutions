@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getPortalSession } from '@/lib/portal-auth';
+import {
+  areAllPortalAgreementsSignedForProject,
+  PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE,
+} from '@/lib/portal-project-agreement-gate';
 import { portalUserOwnsProject } from '@/lib/portal-project-access';
 import { isPortalAdminRole } from '@/lib/portal-role-data';
 import {
@@ -79,6 +83,11 @@ export async function POST(request: Request) {
 
   if (!(await portalUserOwnsProject(session.userId, resolvedProjectId))) {
     return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
+  }
+
+  const allSigned = await areAllPortalAgreementsSignedForProject(session.userId, resolvedProjectId);
+  if (!allSigned) {
+    return NextResponse.json({ ok: false, error: PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE }, { status: 403 });
   }
 
   const files = formData

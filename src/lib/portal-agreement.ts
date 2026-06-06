@@ -45,6 +45,8 @@ export type PortalAgreementRenderContext = {
   signature?: PortalAgreementSignatureDetails;
   /** Used for section 23 Date (MM/dd/yyyy). Falls back to the runtime default timezone. */
   timeZone?: string;
+  /** When true and unsigned, preview today's date in the Client signature block. */
+  clientAccepted?: boolean;
 };
 
 /** Agreement date as MM/dd/yyyy in the given IANA timezone. */
@@ -64,43 +66,86 @@ export function formatAgreementTodayDate(timeZone?: string): string {
   return formatAgreementDate(new Date(), timeZone);
 }
 
-function formatAgreementClientField(value: string | null | undefined): string {
+export const PORTAL_AGREEMENT_SIGNATURE_SECTION_HEADING = '23. Acceptance and Signatures';
+
+/** Default heading for appended signature blocks on custom project agreements. */
+export const PORTAL_AGREEMENT_SIGNATURE_SECTION_HEADING_DEFAULT = 'Acceptance and Signatures';
+
+function formatPortalAgreementClientField(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : '—';
+  return trimmed ? trimmed : null;
 }
 
-function buildAcceptanceAndSignaturesSection(context: PortalAgreementRenderContext): PortalAgreementSection {
+/** Client signature lines; omits fields with no consultation data. */
+export function buildPortalAgreementClientSignatureBody(context: PortalAgreementRenderContext): string {
   const { client, signature } = context;
-  const fullName = signature?.signerName ?? client.name;
-  const phone = client.phone?.trim();
-  const company = client.company?.trim();
-  const agreementDate = signature?.signedAt
+  const fullName = formatPortalAgreementClientField(signature?.signerName ?? client.name);
+  const company = formatPortalAgreementClientField(client.company);
+  const email = formatPortalAgreementClientField(client.email);
+  const phone = formatPortalAgreementClientField(client.phone);
+  const signedDate = signature?.signedAt
     ? formatAgreementDate(signature.signedAt, context.timeZone)
-    : formatAgreementTodayDate(context.timeZone);
+    : null;
+  const clientAgreementDate =
+    signedDate ?? (context.clientAccepted ? formatAgreementTodayDate(context.timeZone) : '—');
 
-  const clientBody = [
-    `Full Name: ${fullName}`,
-    ...(company ? [`Company: ${company}`] : []),
-    `Email: ${client.email}`,
-    ...(phone ? [`Phone: ${phone}`] : []),
-    `Signature: ${fullName}`,
-    `Date: ${agreementDate}`,
-  ].join('\n');
+  const lines: string[] = [];
+
+  if (fullName) {
+    lines.push(`Full Name: ${fullName}`);
+  }
+  if (company) {
+    lines.push(`Company: ${company}`);
+  }
+  if (email) {
+    lines.push(`Email: ${email}`);
+  }
+  if (phone) {
+    lines.push(`Phone: ${phone}`);
+  }
+  if (fullName) {
+    lines.push(`Signature: ${fullName}`);
+  }
+  lines.push(`Date: ${clientAgreementDate}`);
+
+  return lines.join('\n');
+}
+
+/** Shared Client / company signature block used in the portal and PDFs. */
+export function buildPortalAgreementSignatureSection(
+  context: PortalAgreementRenderContext,
+  heading: string = PORTAL_AGREEMENT_SIGNATURE_SECTION_HEADING_DEFAULT
+): PortalAgreementSection {
+  const signedDate = context.signature?.signedAt
+    ? formatAgreementDate(context.signature.signedAt, context.timeZone)
+    : null;
+  const companyAgreementDate = signedDate ?? formatAgreementTodayDate(context.timeZone);
 
   const companyBody = [
     `Representative Name: ${PORTAL_AGREEMENT_COMPANY.representativeName}`,
     `Title: ${PORTAL_AGREEMENT_COMPANY.representativeTitle}`,
     `Signature: ${PORTAL_AGREEMENT_COMPANY.representativeName}`,
-    `Date: ${agreementDate}`,
+    `Date: ${companyAgreementDate}`,
   ].join('\n');
 
   return {
-    heading: '23. Acceptance and Signatures',
+    heading,
     subsections: [
-      { title: 'Client', body: clientBody },
+      { title: 'Client', body: buildPortalAgreementClientSignatureBody(context) },
       { title: PORTAL_AGREEMENT_COMPANY.name, body: companyBody },
     ],
   };
+}
+
+function buildAcceptanceAndSignaturesSection(context: PortalAgreementRenderContext): PortalAgreementSection {
+  return buildPortalAgreementSignatureSection(context, PORTAL_AGREEMENT_SIGNATURE_SECTION_HEADING);
+}
+
+/** CSA sections 1–22 only (signature block is rendered separately in the portal). */
+export function getPortalAgreementContentSections(): PortalAgreementSection[] {
+  return getPortalAgreementSections().filter(
+    (section) => section.heading !== PORTAL_AGREEMENT_SIGNATURE_SECTION_HEADING
+  );
 }
 
 /** Agreement sections with client-specific values in section 23 (and PDF). */
@@ -108,7 +153,7 @@ export function getPortalAgreementSectionsForClient(
   context: PortalAgreementRenderContext
 ): PortalAgreementSection[] {
   return getPortalAgreementSections().map((section) =>
-    section.heading === '23. Acceptance and Signatures'
+    section.heading === PORTAL_AGREEMENT_SIGNATURE_SECTION_HEADING
       ? buildAcceptanceAndSignaturesSection(context)
       : section
   );

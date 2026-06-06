@@ -56,12 +56,19 @@ export function consultationProfileFromRequest(request: {
   email: string;
   company: string | null;
   phone: string | null;
+  timezone?: string | null;
+  preferredContact?: string | null;
 }): PortalClientProfile {
+  const timezone = request.timezone?.trim();
+  const preferredContact = request.preferredContact === 'p' ? 'p' : request.preferredContact === 'e' ? 'e' : null;
+
   return {
     name: request.name.trim(),
     email: request.email.trim(),
     company: request.company?.trim() || null,
     phone: request.phone?.trim() || null,
+    timezone: timezone && timezone.length > 0 ? timezone : null,
+    preferredContact,
   };
 }
 

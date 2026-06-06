@@ -9,6 +9,7 @@ import {
   type PortalAdminConsultationRow,
 } from '@/lib/portal-admin-client-display';
 import { formatPhoneNumber } from '@/lib/phone';
+import { PortalAdminTableNameEditIcon } from '@/components/portal-admin-table-name-edit-icon';
 import { cn } from '@/lib/utils';
 
 export type PortalAdminClientsTableProps = {
@@ -149,27 +150,17 @@ export function PortalAdminClientsTable({
   }
 
   function renderPrimaryCell(row: PortalAdminConsultationRow, isSelected: boolean) {
-    const label = row.name;
-
-    if (selectionMode) {
-      return (
-        <span
-          className={cn(
-            'font-medium',
-            isSelected ? 'text-primary' : 'text-foreground'
-          )}
-        >
-          {label}
-        </span>
-      );
-    }
-
     return (
       <Link
         href={`${detailPathPrefix}/${row.id}`}
-        className="font-medium text-foreground transition-colors hover:text-primary"
+        onClick={selectionMode ? (event) => event.stopPropagation() : undefined}
+        className={cn(
+          'group inline-flex min-w-0 items-center gap-2 font-medium transition-colors hover:text-primary',
+          isSelected ? 'text-primary' : 'text-foreground'
+        )}
       >
-        {label}
+        <PortalAdminTableNameEditIcon />
+        <span className="min-w-0 truncate">{row.name}</span>
       </Link>
     );
   }

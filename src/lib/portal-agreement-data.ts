@@ -55,6 +55,9 @@ export function areAllProjectAgreementsSigned(agreements: PortalAgreementListIte
 }
 
 /** Portal features unlock when every listed CSA and project agreement is signed. */
+export const PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE =
+  'Sign all agreements for this project before using this feature.';
+
 export function areAllPortalAgreementsSigned(agreements: PortalAgreementListItem[]): boolean {
   if (agreements.length === 0) {
     return false;

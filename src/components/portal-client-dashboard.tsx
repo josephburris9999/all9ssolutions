@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { PortalAgreementSection } from '@/components/portal-agreement-section';
 import { PortalAmountDueSection } from '@/components/portal-amount-due-section';
 import { PortalClientHeroInfo } from '@/components/portal-client-hero-info';
@@ -11,10 +10,13 @@ import type {
   PortalConsultationRequestLinkedProject,
 } from '@/lib/portal-consultation-requests-data';
 import type { PortalDashboardView } from '@/lib/portal-dashboard-data';
+import { PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE } from '@/lib/portal-agreement-data';
 
 type PortalClientDashboardProps = PortalDashboardView & {
   heroTitle?: string;
   heroIdentityPrefix?: string;
+  /** When set (e.g. admin portal), shown after `heroIdentityPrefix` instead of `clientName`. */
+  heroIdentityName?: string;
   consultationRequestId?: string;
   allowCreatePortalAccount?: boolean;
   consultationRequests?: PortalConsultationRequestDetail[];
@@ -28,6 +30,8 @@ type PortalClientDashboardProps = PortalDashboardView & {
   linkedProjectsForRequests?: PortalConsultationRequestLinkedProject[];
   /** Client portal: show project-scoped workspace sections (agreements, timeline, etc.). */
   showClientProjectWorkspace?: boolean;
+  /** Admin portal: show Add Agreement in the Agreements section. */
+  showAddAgreementButton?: boolean;
 };
 
 export function PortalClientDashboard({
@@ -35,7 +39,6 @@ export function PortalClientDashboard({
   clientProfile,
   clientTimezone,
   selectedProject,
-  projectPickerHref,
   agreements,
   agreementStatus,
   projectTimelines,
@@ -46,6 +49,7 @@ export function PortalClientDashboard({
   heroInfo,
   heroTitle = 'Client Projects',
   heroIdentityPrefix = 'Signed in as',
+  heroIdentityName,
   consultationRequestId,
   allowCreatePortalAccount = false,
   consultationRequests,
@@ -54,11 +58,15 @@ export function PortalClientDashboard({
   mustChangePassword = false,
   linkedProjectsForRequests,
   showClientProjectWorkspace = false,
+  showAddAgreementButton = false,
 }: PortalClientDashboardProps) {
   const requests = consultationRequests ?? [];
   const hideRequestInHero = showClientConsultationRequests && requests.length > 0;
   const showWorkspace = showClientProjectWorkspace && selectedProject != null;
   const workspaceProjectId = selectedProject?.id ?? null;
+  const allAgreementsSigned = agreementStatus.signed;
+  const supportAudience = consultationRequestId ? 'admin' : 'client';
+  const identityName = heroIdentityName ?? clientName;
   return (
     <>
       <section className="relative overflow-hidden bg-background px-[1.25rem] pb-16 pt-28 md:pb-20 md:pt-32">
@@ -71,20 +79,9 @@ export function PortalClientDashboard({
             {heroTitle}
           </h1>
           <p className="mb-4 text-lg text-muted-foreground">
-            {heroIdentityPrefix} <span className="text-foreground">{clientName}</span>
+            {heroIdentityPrefix} <span className="text-foreground">{identityName}</span>
           </p>
-          {projectPickerHref ? (
-            <p className="mb-8">
-              <Link
-                href={projectPickerHref}
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Switch project
-              </Link>
-            </p>
-          ) : (
-            <div className="mb-8" />
-          )}
+          <div className="mb-8" />
           {!showPasswordChangeButton ? (
             <div className="w-full max-w-3xl">
               <PortalClientHeroInfo
@@ -136,13 +133,24 @@ export function PortalClientDashboard({
 
           <section className="relative bg-background px-[1.25rem] py-24">
             <div className="container mx-auto px-4">
-              <PortalProjectTimeline projects={projectTimelines} referenceNow={timelineReferenceNow} />
+              <PortalProjectTimeline
+                projects={projectTimelines}
+                referenceNow={timelineReferenceNow}
+                emptyMessage={
+                  !allAgreementsSigned ? PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE : undefined
+                }
+              />
             </div>
           </section>
 
           <section className="relative bg-secondary/30 px-[1.25rem] py-24">
             <div className="container mx-auto px-4">
-              <PortalAmountDueSection amounts={amountSummary} showPaymentActions ledgerLayout />
+              <PortalAmountDueSection
+                amounts={amountSummary}
+                showPaymentActions
+                ledgerLayout
+                allAgreementsSigned={allAgreementsSigned}
+              />
             </div>
           </section>
 
@@ -153,6 +161,8 @@ export function PortalClientDashboard({
                 initialProgressId={supportThread.progressId}
                 timeZone={clientTimezone}
                 projectId={workspaceProjectId}
+                audience={supportAudience}
+                allAgreementsSigned={allAgreementsSigned}
               />
             </div>
           </section>
@@ -163,6 +173,7 @@ export function PortalClientDashboard({
                 initialUploads={contentUploads}
                 timeZone={clientTimezone}
                 projectId={workspaceProjectId}
+                allAgreementsSigned={allAgreementsSigned}
               />
             </div>
           </section>
@@ -179,6 +190,9 @@ export function PortalClientDashboard({
                 showSignedAgreementNotice={!consultationRequestId}
                 readOnly={Boolean(consultationRequestId)}
                 consultationRequestId={consultationRequestId}
+                initialAccordionCollapsed={showAddAgreementButton}
+                showAddAgreementButton={showAddAgreementButton}
+                projectId={selectedProject?.id ?? null}
               />
             </div>
           </section>
@@ -200,6 +214,7 @@ export function PortalClientDashboard({
                     amounts={amountSummary}
                     showPaymentActions={!consultationRequestId}
                     ledgerLayout
+                    allAgreementsSigned={allAgreementsSigned}
                   />
                 </div>
               </section>
@@ -210,6 +225,7 @@ export function PortalClientDashboard({
                     initialMessages={supportThread.messages}
                     initialProgressId={supportThread.progressId}
                     timeZone={clientTimezone}
+                    allAgreementsSigned={allAgreementsSigned}
                   />
                 </div>
               </section>
@@ -221,6 +237,7 @@ export function PortalClientDashboard({
                     timeZone={clientTimezone}
                     readOnly={Boolean(consultationRequestId)}
                     consultationRequestId={consultationRequestId}
+                    allAgreementsSigned={allAgreementsSigned}
                   />
                 </div>
               </section>

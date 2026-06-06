@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PortalAgreementBody } from '@/components/portal-agreement-body';
+import {
+  buildPortalAgreementSignatureRenderContext,
+  PortalAgreementSignatureBlock,
+  portalAgreementSignatureHeadingForKind,
+} from '@/components/portal-agreement-signature-block';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { CONSULTATION_NAME_MAX_LENGTH } from '@/lib/field-lengths';
 import {
   formatPortalSignedAt,
-  getPortalAgreementSectionsForClient,
+  getPortalAgreementContentSections,
   PORTAL_AGREEMENT_TITLE,
   type PortalAgreementStatus,
 } from '@/lib/portal-agreement';
@@ -74,19 +79,26 @@ export function PortalConsultationAgreementSignDialog({
       return null;
     }
 
-    return getPortalAgreementSectionsForClient({
-      client: clientProfile,
-      timeZone: displayTimeZone,
-      signature:
-        agreement.signed && agreement.signerName && agreement.signedAt && signedLabel
-          ? {
-              signerName: agreement.signerName,
-              signedAt: agreement.signedAt,
-              signedAtLabel: signedLabel,
-            }
-          : undefined,
-    });
-  }, [agreement, clientProfile, displayTimeZone, isClientServiceAgreement, signedLabel]);
+    return getPortalAgreementContentSections();
+  }, [isClientServiceAgreement]);
+
+  const signatureContext = useMemo(
+    () =>
+      buildPortalAgreementSignatureRenderContext({
+        clientProfile,
+        timeZone: displayTimeZone,
+        clientAccepted: accepted && !agreement.signed,
+        signed: agreement.signed,
+        signerName: agreement.signerName,
+        signedAt: agreement.signedAt,
+        signedAtLabel: signedLabel,
+      }),
+    [accepted, agreement, clientProfile, displayTimeZone, signedLabel]
+  );
+
+  const agreementKind = isClientServiceAgreement ? 'client' : 'project';
+  const hasAgreementBody =
+    isClientServiceAgreement || Boolean(agreement.body?.trim());
 
   function applyStatus(status: PortalAgreementStatus) {
     const next: PortalConsultationRequestAgreement = {
@@ -184,6 +196,14 @@ export function PortalConsultationAgreementSignDialog({
                 <p>Agreement text is not available yet. Contact all9s Solutions if you need a copy.</p>
               )
             ) : null}
+            <PortalAgreementSignatureBlock
+              clientProfile={clientProfile}
+              timeZone={displayTimeZone}
+              clientAccepted={signatureContext.clientAccepted}
+              signature={signatureContext.signature}
+              heading={portalAgreementSignatureHeadingForKind(agreementKind)}
+              separated={hasAgreementBody}
+            />
           </div>
 
           {agreement.signed ? (

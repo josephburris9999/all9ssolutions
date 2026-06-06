@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   estimatedCompletionIsoToDateInput,
+  getMinFutureProjectDateInputValue,
   getMinProjectDateInputValue,
   isEstimatedCompletionDateAllowed,
   isEstimatedCompletionDateAllowedOnServer,
+  isFutureEstimatedCompletionDateAllowed,
+  isFutureEstimatedCompletionDateAllowedOnServer,
   parseEstimatedCompletionInput,
 } from './portal-project-estimated-completion';
 
@@ -12,6 +15,10 @@ describe('portal-project-estimated-completion', () => {
 
   it('formats min date input from reference date', () => {
     expect(getMinProjectDateInputValue(reference)).toBe('2026-06-02');
+  });
+
+  it('formats min future date input as tomorrow', () => {
+    expect(getMinFutureProjectDateInputValue(reference)).toBe('2026-06-03');
   });
 
   it('converts stored ISO to date input', () => {
@@ -24,11 +31,24 @@ describe('portal-project-estimated-completion', () => {
     expect(isEstimatedCompletionDateAllowed('2026-06-01', reference)).toBe(false);
   });
 
+  it('requires strictly future dates locally', () => {
+    expect(isFutureEstimatedCompletionDateAllowed('2026-06-02', reference)).toBe(false);
+    expect(isFutureEstimatedCompletionDateAllowed('2026-06-03', reference)).toBe(true);
+    expect(isFutureEstimatedCompletionDateAllowed('2026-06-01', reference)).toBe(false);
+  });
+
   it('allows today and future dates on the server', () => {
     const utcReference = new Date('2026-06-02T23:30:00.000Z');
     expect(isEstimatedCompletionDateAllowedOnServer('2026-06-02', utcReference)).toBe(true);
     expect(isEstimatedCompletionDateAllowedOnServer('2026-06-03', utcReference)).toBe(true);
     expect(isEstimatedCompletionDateAllowedOnServer('2026-06-01', utcReference)).toBe(false);
+  });
+
+  it('requires strictly future dates on the server', () => {
+    const utcReference = new Date('2026-06-02T23:30:00.000Z');
+    expect(isFutureEstimatedCompletionDateAllowedOnServer('2026-06-02', utcReference)).toBe(false);
+    expect(isFutureEstimatedCompletionDateAllowedOnServer('2026-06-03', utcReference)).toBe(true);
+    expect(isFutureEstimatedCompletionDateAllowedOnServer('2026-06-01', utcReference)).toBe(false);
   });
 
   it('parses date-only input at local noon', () => {

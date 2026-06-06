@@ -67,7 +67,8 @@ function mapClientServiceAgreementSummary(
 function mapConsultationRequestRow(
   row: ConsultationRequestRow,
   project: { id: string; title: string } | null,
-  clientServiceAgreement: PortalConsultationRequestAgreement
+  clientServiceAgreement: PortalConsultationRequestAgreement,
+  discussion: { body: string; updatedAt: Date } | null
 ): PortalConsultationRequestDetail {
   return {
     id: row.id,
@@ -85,6 +86,12 @@ function mapConsultationRequestRow(
     emailDeliveryStatus: mapEmailDeliveryStatus(row.emailDeliveryStatus),
     emailBouncedAt: row.emailBouncedAt?.toISOString() ?? null,
     clientServiceAgreement,
+    clientDiscussion: discussion
+      ? {
+          body: discussion.body,
+          updatedAt: discussion.updatedAt.toISOString(),
+        }
+      : null,
   };
 }
 
@@ -161,15 +168,41 @@ async function attachClientServiceAgreementsForRows(
   return clientServiceAgreementByRequestId;
 }
 
+async function loadDiscussionsByConsultationRequestId(
+  consultationRequestIds: string[]
+): Promise<Map<string, { body: string; updatedAt: Date }>> {
+  if (consultationRequestIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await prisma.consultationDiscussion.findMany({
+    where: { consultationRequestId: { in: consultationRequestIds } },
+    select: {
+      consultationRequestId: true,
+      body: true,
+      updatedAt: true,
+    },
+  });
+
+  return new Map(
+    rows.map((row) => [
+      row.consultationRequestId,
+      { body: row.body, updatedAt: row.updatedAt },
+    ] as const)
+  );
+}
+
 function mapRowsWithProjects(
   rows: ConsultationRequestRow[],
   projectByRequestId: Map<string, LinkedProjectSummary>,
-  clientServiceAgreementByRequestId: Map<string, PortalConsultationRequestAgreement>
+  clientServiceAgreementByRequestId: Map<string, PortalConsultationRequestAgreement>,
+  discussionByRequestId: Map<string, { body: string; updatedAt: Date }>
 ): PortalConsultationRequestDetail[] {
   return rows.map((row) => {
     const project = projectByRequestId.get(row.id) ?? null;
     const clientServiceAgreement = clientServiceAgreementByRequestId.get(row.id)!;
-    return mapConsultationRequestRow(row, project, clientServiceAgreement);
+    const discussion = discussionByRequestId.get(row.id) ?? null;
+    return mapConsultationRequestRow(row, project, clientServiceAgreement, discussion);
   });
 }
 
@@ -189,9 +222,17 @@ export async function listConsultationRequestsForEmail(
 
   const projectByRequestId = await loadProjectByConsultationRequestId(rows.map((row) => row.id));
   const sortedRows = sortConsultationRowsByProjectCreatedAt(rows, projectByRequestId);
-  const clientServiceAgreementByRequestId = await attachClientServiceAgreementsForRows(sortedRows);
+  const [clientServiceAgreementByRequestId, discussionByRequestId] = await Promise.all([
+    attachClientServiceAgreementsForRows(sortedRows),
+    loadDiscussionsByConsultationRequestId(sortedRows.map((row) => row.id)),
+  ]);
 
-  return mapRowsWithProjects(sortedRows, projectByRequestId, clientServiceAgreementByRequestId);
+  return mapRowsWithProjects(
+    sortedRows,
+    projectByRequestId,
+    clientServiceAgreementByRequestId,
+    discussionByRequestId
+  );
 }
 
 export async function listConsultationRequestsForPortalUser(
@@ -209,7 +250,15 @@ export async function listConsultationRequestsForPortalUser(
     portalUserId
   );
   const sortedRows = sortConsultationRowsByProjectCreatedAt(rows, projectByRequestId);
-  const clientServiceAgreementByRequestId = await attachClientServiceAgreementsForRows(sortedRows);
+  const [clientServiceAgreementByRequestId, discussionByRequestId] = await Promise.all([
+    attachClientServiceAgreementsForRows(sortedRows),
+    loadDiscussionsByConsultationRequestId(sortedRows.map((row) => row.id)),
+  ]);
 
-  return mapRowsWithProjects(sortedRows, projectByRequestId, clientServiceAgreementByRequestId);
+  return mapRowsWithProjects(
+    sortedRows,
+    projectByRequestId,
+    clientServiceAgreementByRequestId,
+    discussionByRequestId
+  );
 }

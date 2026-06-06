@@ -71,7 +71,6 @@ export async function PortalProjectDashboardLoader({
   }
 
   const activeConsultationId = consultationRequestId ?? gate.project.consultationRequestId;
-  const projectPickerHref = projects.length > 1 ? basePath : null;
 
   const dashboard = await loadPortalClientProjectDashboardView(
     {
@@ -81,7 +80,6 @@ export async function PortalProjectDashboardLoader({
     },
     {
       selectedProject: gate.project,
-      projectPickerHref,
     }
   );
 

@@ -11,6 +11,7 @@ import {
 } from '@/lib/portal-admin-client-display';
 import { cn } from '@/lib/utils';
 import { ConsultationEmailDeliveryBadge } from '@/components/consultation-email-delivery-badge';
+import { PortalAdminTableNameEditIcon } from '@/components/portal-admin-table-name-edit-icon';
 
 type PortalAdminConsultationsTableProps = {
   clients: PortalAdminConsultationClientRow[];
@@ -133,9 +134,10 @@ export function PortalAdminConsultationsTable({ clients, emptyMessage }: PortalA
                   <td className="px-4 py-3">
                     <Link
                       href={getPortalAdminConsultationDetailPath(client.clientKey)}
-                      className="font-medium text-foreground transition-colors hover:text-primary"
+                      className="group inline-flex min-w-0 items-center gap-2 font-medium text-foreground transition-colors hover:text-primary"
                     >
-                      {client.name}
+                      <PortalAdminTableNameEditIcon />
+                      <span className="min-w-0 truncate">{client.name}</span>
                     </Link>
                   </td>
                   <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">

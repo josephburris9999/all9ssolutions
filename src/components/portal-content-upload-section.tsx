@@ -11,6 +11,7 @@ import {
   PORTAL_UPLOAD_MAX_FILES_PER_REQUEST,
 } from '@/lib/portal-content-upload-constants';
 import { formatPortalSupportMessageTime } from '@/lib/portal-support-format';
+import { PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE } from '@/lib/portal-agreement-data';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
@@ -23,6 +24,8 @@ type PortalContentUploadSectionProps = {
   consultationRequestId?: string;
   /** When set, uploads and listing are scoped to this client project. */
   projectId?: string | null;
+  /** Client portal: uploads disabled until all project agreements are signed. Omit for admin views. */
+  allAgreementsSigned?: boolean;
 };
 
 const ACCEPTED_TYPES =
@@ -34,6 +37,7 @@ export function PortalContentUploadSection({
   readOnly = false,
   consultationRequestId,
   projectId,
+  allAgreementsSigned,
 }: PortalContentUploadSectionProps) {
   const { toast } = useToast();
   const { isSubmitting: isUploading, runGuardedSubmit } = useSubmitGuard();
@@ -43,6 +47,7 @@ export function PortalContentUploadSection({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const displayTimeZone = timeZone ?? undefined;
+  const uploadEnabled = !readOnly && allAgreementsSigned !== false;
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
@@ -124,9 +129,10 @@ export function PortalContentUploadSection({
   function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
-    if (!isUploading) {
-      setIsDragging(true);
+    if (!uploadEnabled || isUploading) {
+      return;
     }
+    setIsDragging(true);
   }
 
   function handleDragLeave(event: React.DragEvent<HTMLDivElement>) {
@@ -139,7 +145,7 @@ export function PortalContentUploadSection({
     event.preventDefault();
     event.stopPropagation();
     setIsDragging(false);
-    if (isUploading) return;
+    if (!uploadEnabled || isUploading) return;
     handleFileSelection(event.dataTransfer.files);
   }
 
@@ -160,7 +166,11 @@ export function PortalContentUploadSection({
         </p>
       ) : null}
 
-      {!readOnly ? (
+      {!readOnly && allAgreementsSigned === false ? (
+        <p className="mb-6 text-sm text-muted-foreground">{PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE}</p>
+      ) : null}
+
+      {uploadEnabled ? (
         <>
           <div
             role="button"

@@ -48,7 +48,6 @@ export async function loadPortalClientProjectDashboardView(
   context: PortalDashboardClientContext & { portalUserId: string; projectId: string },
   options: {
     selectedProject: PortalProjectOption;
-    projectPickerHref: string | null;
   }
 ): Promise<PortalDashboardView> {
   const base = await loadPortalDashboardView(
@@ -59,7 +58,6 @@ export async function loadPortalClientProjectDashboardView(
     },
     {
       selectedProject: options.selectedProject,
-      projectPickerHref: options.projectPickerHref,
     }
   );
 
@@ -76,12 +74,14 @@ export async function loadPortalClientProjectDashboardView(
 
   const agreementStatus = buildAgreementStatusFromList(agreements);
 
-  const [projectTimelines, amountSummary, supportThread, contentUploads] = await Promise.all([
-    getPortalProjectTimelines(portalUserId, clientTimezone, projectId),
-    getPortalAmountSummary(portalUserId, projectId),
-    getPortalSupportThread(portalUserId, projectId),
-    getPortalContentUploads(portalUserId, projectId),
-  ]);
+  const [projectTimelines, amountSummary, supportThread, contentUploads] = agreementStatus.signed
+    ? await Promise.all([
+        getPortalProjectTimelines(portalUserId, clientTimezone, projectId),
+        getPortalAmountSummary(portalUserId, projectId),
+        getPortalSupportThread(portalUserId, projectId),
+        getPortalContentUploads(portalUserId, projectId),
+      ])
+    : [[], { depositAmount: 0, amountDue: 0, paidAmount: 0, lineItems: [] }, { progressId: null, messages: [] }, []];
 
   return {
     ...base,

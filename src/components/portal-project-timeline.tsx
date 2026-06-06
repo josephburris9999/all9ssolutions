@@ -208,13 +208,16 @@ export function PortalProjectTimeline({
         <p className="text-sm text-muted-foreground">{sectionEmptyMessage}</p>
       ) : (
         <div className="space-y-6">
-          {projects.map((project) => (
-            <ProjectTimelineChart key={project.projectId} data={project} referenceNow={referenceNow} />
+          {projects.map((project, index) => (
+            <ProjectTimelineChart
+              key={project.projectId || `timeline-chart-${index}`}
+              data={project}
+              referenceNow={referenceNow}
+            />
           ))}
+          {actions != null ? <div key="portal-project-timeline-actions">{actions}</div> : null}
         </div>
       )}
-
-      {actions}
     </section>
   );
 }

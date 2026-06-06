@@ -42,6 +42,7 @@ export function PortalAdminCurrentProjectWorkspaceSections({
             consultationRequestId={consultationRequestId}
             initialAccordionCollapsed
             showAddAgreementButton
+            projectId={projectId}
           />
         </div>
       </section>

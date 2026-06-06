@@ -15,11 +15,18 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
+const PROJECT_CREATION_NOTICE_HTML =
+  '<p>We will create your project in the client portal within one business day. You will receive access to project updates, messaging, and document sharing once your project is ready.</p>';
+
+const PROJECT_CREATION_NOTICE_TEXT =
+  'We will create your project in the client portal within one business day. You will receive access to project updates, messaging, and document sharing once your project is ready.';
+
 export function buildClientAgreementSignedEmail(options: {
   name: string;
   signerName: string;
   signedAtLabel: string;
   agreementTitle?: string;
+  includeProjectCreationNotice?: boolean;
 }) {
   const displayName = options.name.trim() || 'there';
   const signerName = options.signerName.trim();
@@ -27,6 +34,12 @@ export function buildClientAgreementSignedEmail(options: {
   const agreementTitle = options.agreementTitle?.trim() || PORTAL_AGREEMENT_TITLE;
 
   const subject = 'Your signed Client Service Agreement — all9s Solutions';
+  const projectCreationNoticeHtml = options.includeProjectCreationNotice
+    ? PROJECT_CREATION_NOTICE_HTML
+    : '';
+  const projectCreationNoticeText = options.includeProjectCreationNotice
+    ? ['', PROJECT_CREATION_NOTICE_TEXT]
+    : [];
 
   const html = `<!DOCTYPE html>
 <html>
@@ -35,6 +48,7 @@ export function buildClientAgreementSignedEmail(options: {
   <p>Thank you for signing the <strong>${escapeHtml(agreementTitle)}</strong>.</p>
   <p>all9s Solutions has received and saved your electronic signature. Your agreement is on file with us as of <strong>${escapeHtml(signedAtLabel)}</strong>, signed by <strong>${escapeHtml(signerName)}</strong>.</p>
   <p>A copy of the fully executed agreement is attached to this email for your records.</p>
+  ${projectCreationNoticeHtml}
   <p style="font-size:14px;color:#6b7280;margin-top:32px;">If you have questions, reply to this email or contact us at <a href="mailto:hello@all9ssolutions.com">hello@all9ssolutions.com</a>.</p>
   <p style="font-size:14px;color:#6b7280;">— all9s Solutions</p>
 </body>
@@ -49,6 +63,7 @@ export function buildClientAgreementSignedEmail(options: {
     `${signedAtLabel}, signed by ${signerName}.`,
     '',
     'A copy of the fully executed agreement is attached to this email for your records.',
+    ...projectCreationNoticeText,
     '',
     'Questions? Reply to this email or contact hello@all9ssolutions.com.',
     '',
@@ -64,6 +79,7 @@ export async function sendClientAgreementSignedEmail(options: {
   signerName: string;
   signedAtLabel: string;
   agreementTitle?: string;
+  includeProjectCreationNotice?: boolean;
   pdfFilename?: string;
   pdf: Buffer;
 }): Promise<{ ok: true } | { ok: false; error: string; skipped?: boolean }> {
@@ -84,6 +100,7 @@ export async function sendClientAgreementSignedEmail(options: {
     signerName: options.signerName,
     signedAtLabel: options.signedAtLabel,
     agreementTitle: options.agreementTitle,
+    includeProjectCreationNotice: options.includeProjectCreationNotice,
   });
 
   const pdfFilename = options.pdfFilename?.trim() || CLIENT_AGREEMENT_PDF_FILENAME;

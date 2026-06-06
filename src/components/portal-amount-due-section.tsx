@@ -17,12 +17,15 @@ import {
   type PortalAmountDueLineItem,
   type PortalAmountSummary,
 } from '@/lib/portal-amount-due-data';
+import { PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE } from '@/lib/portal-agreement-data';
 
 type PortalAmountDueSectionProps = {
   amounts: PortalAmountSummary;
   showPaymentActions?: boolean;
   /** Client portal: deposit first row, line items, paid last row (no summary cards). */
   ledgerLayout?: boolean;
+  /** Client portal: payment actions disabled until all project agreements are signed. Omit for admin views. */
+  allAgreementsSigned?: boolean;
 };
 
 function AmountCard({ label, value }: { label: string; value: number }) {
@@ -139,8 +142,10 @@ export function PortalAmountDueSection({
   amounts,
   showPaymentActions = true,
   ledgerLayout = false,
+  allAgreementsSigned,
 }: PortalAmountDueSectionProps) {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const paymentsEnabled = allAgreementsSigned !== false;
 
   return (
     <section className="mt-12 max-w-3xl" aria-labelledby="portal-amount-due-heading">
@@ -162,17 +167,29 @@ export function PortalAmountDueSection({
 
         <AmountDueTable amounts={amounts} ledgerLayout={ledgerLayout} />
 
+        {allAgreementsSigned === false ? (
+          <p className="text-sm text-muted-foreground">{PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE}</p>
+        ) : null}
+
         {showPaymentActions ? (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <PaymentMethodIcons layout="row" className="min-w-0 max-w-full flex-1 justify-start" />
-            <Button type="button" className="w-full shrink-0 sm:w-auto" onClick={() => setPaymentModalOpen(true)}>
+            <Button
+              type="button"
+              className="w-full shrink-0 sm:w-auto"
+              disabled={!paymentsEnabled}
+              onClick={() => paymentsEnabled && setPaymentModalOpen(true)}
+            >
               <CreditCard className="size-4" aria-hidden />
               Make a Payment
             </Button>
           </div>
         ) : null}
 
-        <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+        <Dialog
+          open={paymentsEnabled && paymentModalOpen}
+          onOpenChange={(open) => paymentsEnabled && setPaymentModalOpen(open)}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Coming soon</DialogTitle>

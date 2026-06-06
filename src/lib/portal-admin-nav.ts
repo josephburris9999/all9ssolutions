@@ -13,6 +13,8 @@ export type PortalAdminClientCategoryCounts = {
   completed: number;
 };
 
+export type { PortalAdminUnreadMessageProject } from '@/lib/portal-admin-unread-messages';
+
 export type PortalAdminNavLink = {
   id: string;
   label: string;

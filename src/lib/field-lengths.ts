@@ -21,11 +21,20 @@ export const CONSULTATION_COMPANY_MAX_LENGTH = 200;
 /** `ConsultationRequest.message` */
 export const CONSULTATION_MESSAGE_MAX_LENGTH = 10000;
 
+/** `ConsultationDiscussion.body` */
+export const CONSULTATION_DISCUSSION_MAX_LENGTH = 20000;
+
 /** Plaintext portal password (policy); fits in `PortalUser.passwordHash` (255). */
 export const PORTAL_PASSWORD_MAX_LENGTH = 128;
 
 /** `PortalContentUpload.fileName` */
 export const PORTAL_UPLOAD_FILE_NAME_MAX_LENGTH = 255;
 
-/** `ProjectAmountDueItem.description` */
-export const PROJECT_AMOUNT_DUE_DESCRIPTION_MAX_LENGTH = 255;
+/** `ProjectAgreement.title` */
+export const PROJECT_AGREEMENT_TITLE_MAX_LENGTH = CONSULTATION_NAME_MAX_LENGTH;
+
+/** `ProjectAgreement.body` */
+export const PROJECT_AGREEMENT_BODY_MAX_LENGTH = 20000;
+
+/** `Project.title` */
+export const PROJECT_TITLE_MAX_LENGTH = CONSULTATION_NAME_MAX_LENGTH;

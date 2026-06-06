@@ -28,11 +28,24 @@ model ConsultationRequest {
   portalUser       PortalUser? @relation(fields: [portalUserId], references: [id], onDelete: SetNull)
   projects         Project[]
   clientAgreement  ClientAgreement?
+  consultationDiscussion ConsultationDiscussion?
 
   @@index([email])
   @@index([createdAt])
   @@index([portalUserId])
   @@index([lastResendEmailId])
+}
+
+/// Admin client discussion notes for a consultation request (one per request).
+model ConsultationDiscussion {
+  id                    String              @id @default(cuid()) @db.VarChar(30)
+  consultationRequestId String              @unique @db.VarChar(30)
+  body                  String              @db.VarChar(20000)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  consultationRequest   ConsultationRequest @relation(fields: [consultationRequestId], references: [id], onDelete: Cascade)
+
+  @@index([consultationRequestId])
 }
 
 /// Client accounts for the secure portal (credentials provisioned by all9s).
@@ -78,6 +91,7 @@ model ProjectAgreement {
   signerName       String?                 @db.VarChar(200)
   signedAt         DateTime?               @db.Timestamptz(3)
   signedTimeZone   String?                 @db.VarChar(100)
+  amount           Float                   @default(0) @db.DoublePrecision
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
   project          Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -113,33 +127,17 @@ model Project {
   estimatedCompletionAt DateTime?      @db.Timestamptz(3)
   depositAmount         Float          @default(0) @db.DoublePrecision
   paidAmount            Float          @default(0) @db.DoublePrecision
-  design                String         @db.VarChar(20000)
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   portalUser            PortalUser     @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
   consultationRequest   ConsultationRequest @relation(fields: [consultationRequestId], references: [id], onDelete: Restrict)
   agreements            ProjectAgreement[]
-  amountDueItems        ProjectAmountDueItem[]
   contentUploads        PortalContentUpload[]
   progressRecords       Progress[]
 
   @@index([portalUserId])
   @@index([portalUserId, status])
   @@index([estimatedCompletionAt])
-}
-
-/// Line-item amounts due for a project (many per Project). Deposit and paid totals stay on Project.
-model ProjectAmountDueItem {
-  id          String   @id @default(cuid()) @db.VarChar(30)
-  projectId   String   @db.VarChar(30)
-  amount      Float    @db.DoublePrecision
-  description String   @db.VarChar(255)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([projectId])
-  @@index([projectId, createdAt])
 }
 
 /// Client engagement tracked in the portal (many per Project).
@@ -160,15 +158,17 @@ model Progress {
 
 /// Client requests and provider answers on a progress record (ordered by createdAt).
 model ProgressMessage {
-  id         String              @id @default(cuid()) @db.VarChar(30)
-  progressId String              @db.VarChar(30)
-  kind       ProgressMessageKind
-  body       String              @db.VarChar(10000)
-  createdAt  DateTime            @default(now())
-  progress   Progress            @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  id            String              @id @default(cuid()) @db.VarChar(30)
+  progressId    String              @db.VarChar(30)
+  kind          ProgressMessageKind
+  body          String              @db.VarChar(10000)
+  adminViewedAt DateTime?
+  createdAt     DateTime            @default(now())
+  progress      Progress            @relation(fields: [progressId], references: [id], onDelete: Cascade)
 
   @@index([progressId])
   @@index([progressId, createdAt])
+  @@index([kind, adminViewedAt])
 }
 
 enum ProjectStatus {

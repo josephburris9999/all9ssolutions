@@ -8,11 +8,13 @@ import type {
   PortalAdminConsultationDetail,
 } from '@/lib/portal-admin-client-display';
 import { loadPortalDashboardView } from '@/lib/portal-dashboard-data';
+import { getPortalSession } from '@/lib/portal-auth';
 import {
   listSelectablePortalProjects,
   portalProjectDashboardHref,
   resolvePortalProjectGate,
 } from '@/lib/portal-projects';
+import { getPortalClientName } from '@/lib/portal-user';
 
 type PortalAdminClientPortalViewProps = {
   client: PortalAdminConsultationDetail | PortalAdminConsultationClientDetail;
@@ -39,6 +41,11 @@ export async function PortalAdminClientPortalView({
   allowCreatePortalAccount = false,
   showConsultationRequestsSection = false,
 }: PortalAdminClientPortalViewProps) {
+  const session = await getPortalSession();
+  const adminDisplayName = session
+    ? await getPortalClientName(session.userId, session.email)
+    : 'Admin';
+
   const consultationClient = isConsultationClientDetail(client) ? client : null;
 
   if (showConsultationRequestsSection && consultationClient) {
@@ -66,6 +73,7 @@ export async function PortalAdminClientPortalView({
     allowCreatePortalAccount,
     heroTitle,
     heroIdentityPrefix,
+    heroIdentityName: adminDisplayName,
   };
 
   if (!client.portalUserId) {
@@ -101,7 +109,6 @@ export async function PortalAdminClientPortalView({
     return <PortalNoProjectsMessage />;
   }
 
-  const projectPickerHref = projects.length > 1 ? basePath : null;
   const dashboard = await loadPortalDashboardView(
     {
       ...dashboardContext,
@@ -109,7 +116,6 @@ export async function PortalAdminClientPortalView({
     },
     {
       selectedProject: gate.project,
-      projectPickerHref,
     }
   );
 
@@ -118,6 +124,7 @@ export async function PortalAdminClientPortalView({
       {...dashboard}
       {...dashboardExtras}
       consultationRequestId={gate.project.consultationRequestId}
+      showAddAgreementButton
     />
   );
 }

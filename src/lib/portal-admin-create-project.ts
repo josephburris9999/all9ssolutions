@@ -1,54 +1,23 @@
 import 'server-only';
 
-import { z } from 'zod';
+import { PORTAL_AGREEMENT_VERSION } from '@/lib/portal-agreement';
 import { createProjectForConsultationSchema } from '@/lib/portal-admin-create-project-schema';
 import {
-  isEstimatedCompletionDateAllowedOnServer,
+  isFutureEstimatedCompletionDateAllowedOnServer,
   parseEstimatedCompletionInputOnServer,
-  PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE,
+  PROJECT_ESTIMATED_COMPLETION_FUTURE_DATE_MESSAGE,
 } from '@/lib/portal-project-estimated-completion';
-import { createProjectAmountDueItem } from '@/lib/portal-amount-due';
-import { createPortalProject } from '@/lib/portal-project';
 import {
   PortalUserProvisionError,
   provisionPortalUserForConsultation,
 } from '@/lib/portal-provision-user';
 import { prisma } from '@/lib/prisma';
 import { isPortalAdminRole } from '@/lib/portal-role-data';
-
-const createProjectForConsultationInputSchema = createProjectForConsultationSchema.extend({
-  estimatedCompletionAt: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value, ctx) => {
-      if (!value || value.trim().length === 0) {
-        return undefined;
-      }
-      const parsed = parseEstimatedCompletionInputOnServer(value);
-      if (!parsed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Enter a valid completion date',
-        });
-        return z.NEVER;
-      }
-
-      if (!isEstimatedCompletionDateAllowedOnServer(value)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: PROJECT_ESTIMATED_COMPLETION_PAST_DATE_MESSAGE,
-        });
-        return z.NEVER;
-      }
-
-      return parsed;
-    }),
-});
+import type { z } from 'zod';
 
 export { createProjectForConsultationSchema } from '@/lib/portal-admin-create-project-schema';
-export { createProjectForConsultationInputSchema };
-export type CreateProjectForConsultationInput = z.infer<typeof createProjectForConsultationInputSchema>;
+export const createProjectForConsultationInputSchema = createProjectForConsultationSchema;
+export type CreateProjectForConsultationInput = z.infer<typeof createProjectForConsultationSchema>;
 
 export class CreateProjectForConsultationError extends Error {
   constructor(
@@ -125,24 +94,45 @@ export async function createProjectForConsultation(
   }
 
   const title = input.title.trim() || defaultProjectTitle(consultation);
+  const trimmedCompletionDate = input.estimatedCompletionDate.trim();
+  const parsedCompletionDate = parseEstimatedCompletionInputOnServer(trimmedCompletionDate);
 
-  const project = await createPortalProject({
-    portalUserId,
-    consultationRequestId: consultation.id,
-    title,
-    estimatedCompletionAt: input.estimatedCompletionAt,
-    depositAmount: input.depositAmount,
-    design: input.design,
-    status: 'ACTIVE',
-  });
-
-  if (input.amountDue != null && input.amountDue > 0) {
-    await createProjectAmountDueItem({
-      projectId: project.id,
-      amount: input.amountDue,
-      description: 'Amount due',
-    });
+  if (!parsedCompletionDate) {
+    throw new CreateProjectForConsultationError('Enter a valid completion date', 'INVALID_STATE');
   }
+
+  if (!isFutureEstimatedCompletionDateAllowedOnServer(trimmedCompletionDate)) {
+    throw new CreateProjectForConsultationError(
+      PROJECT_ESTIMATED_COMPLETION_FUTURE_DATE_MESSAGE,
+      'INVALID_STATE'
+    );
+  }
+
+  const project = await prisma.$transaction(async (tx) => {
+    const createdProject = await tx.project.create({
+      data: {
+        portalUserId,
+        consultationRequestId: consultation.id,
+        title,
+        estimatedCompletionAt: parsedCompletionDate,
+        depositAmount: input.depositAmount,
+        status: 'ACTIVE',
+      },
+    });
+
+    await tx.projectAgreement.create({
+      data: {
+        projectId: createdProject.id,
+        title: input.agreementTitle.trim(),
+        body: input.agreementBody.trim(),
+        amount: input.amountDue,
+        documentVersion: PORTAL_AGREEMENT_VERSION,
+        status: 'PENDING',
+      },
+    });
+
+    return createdProject;
+  });
 
   return {
     project,

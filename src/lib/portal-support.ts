@@ -3,6 +3,7 @@ import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { isPortalAdminRole } from '@/lib/portal-role-data';
 import type { PortalSupportMessage } from '@/lib/portal-support-data';
+import { PORTAL_SUPPORT_PROGRESS_TITLE } from '@/lib/portal-support-constants';
 
 export type PortalSupportThread = {
   progressId: string | null;
@@ -17,8 +18,6 @@ export type PortalSupportMessageResult = {
 export type PortalSupportProjectAccess =
   | { ok: true; projectId: string; clientPortalUserId: string }
   | { ok: false; status: number; error: string };
-
-const PORTAL_SUPPORT_PROGRESS_TITLE = 'Client messaging';
 
 function mapMessage(message: {
   id: string;

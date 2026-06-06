@@ -64,14 +64,14 @@ export function PortalConsultationRequestAgreementRow({
 
   return (
     <>
-      <div className="mt-6 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p
-          className="min-w-0 truncate text-sm font-medium text-foreground"
-          title={PORTAL_AGREEMENT_TITLE}
-        >
-          {PORTAL_AGREEMENT_TITLE_SHORT}
-        </p>
-        {agreement.signed ? (
+      {agreement.signed ? (
+        <div className="mt-6 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p
+            className="min-w-0 truncate text-sm font-medium text-foreground"
+            title={PORTAL_AGREEMENT_TITLE}
+          >
+            {PORTAL_AGREEMENT_TITLE_SHORT}
+          </p>
           <Button
             type="button"
             variant="outline"
@@ -83,19 +83,21 @@ export function PortalConsultationRequestAgreementRow({
             <Download className="h-4 w-4" />
             {isDownloading ? 'Downloading…' : 'Download PDF'}
           </Button>
-        ) : (
+        </div>
+      ) : (
+        <div className="mt-6 border-t border-border pt-4">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="w-full shrink-0 sm:w-auto"
+            className="w-full sm:w-auto"
             onClick={() => setSignDialogOpen(true)}
           >
             <FileSignature className="h-4 w-4" />
-            Review & Sign
+            Review & Sign Client Service Agreement
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       <PortalConsultationAgreementSignDialog
         open={signDialogOpen}

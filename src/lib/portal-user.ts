@@ -73,7 +73,24 @@ export type PortalClientProfile = {
   email: string;
   company: string | null;
   phone: string | null;
+  timezone: string | null;
+  preferredContact: 'e' | 'p' | null;
 };
+
+function normalizePortalClientPreferredContact(value: string | null | undefined): 'e' | 'p' | null {
+  if (value === 'p') {
+    return 'p';
+  }
+  if (value === 'e') {
+    return 'e';
+  }
+  return null;
+}
+
+function normalizePortalClientTimezone(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed && isValidIanaTimeZone(trimmed) ? trimmed : null;
+}
 
 function pickPortalDisplayName(options: {
   agreementSignerName?: string | null;
@@ -133,6 +150,8 @@ async function resolvePortalClientIdentity(portalUserId: string, loginEmail: str
         email: true,
         company: true,
         phone: true,
+        timezone: true,
+        preferredContact: true,
         portalUserId: true,
       },
     }),
@@ -170,12 +189,56 @@ export async function getPortalClientProfile(
     email,
     company: profileConsultation?.company?.trim() || null,
     phone: profileConsultation?.phone?.trim() || null,
+    timezone: normalizePortalClientTimezone(profileConsultation?.timezone),
+    preferredContact: normalizePortalClientPreferredContact(profileConsultation?.preferredContact),
   };
 }
 
 export async function getPortalClientName(portalUserId: string, fallbackEmail: string): Promise<string> {
   const { displayName } = await resolvePortalClientIdentity(portalUserId, fallbackEmail);
   return displayName;
+}
+
+/** Portal user display name from their linked consultation profile (not CSA signer name). */
+export async function getPortalUserDisplayName(
+  portalUserId: string,
+  fallbackEmail: string
+): Promise<string> {
+  const normalizedEmail = normalizePortalEmail(fallbackEmail);
+
+  const linkedConsultation = await prisma.consultationRequest.findFirst({
+    where: { portalUserId },
+    orderBy: { createdAt: 'asc' },
+    select: { name: true },
+  });
+
+  const linkedName = linkedConsultation?.name?.trim();
+  if (linkedName) {
+    return linkedName;
+  }
+
+  const emailConsultation = await prisma.consultationRequest.findFirst({
+    where: {
+      email: {
+        equals: normalizedEmail,
+        mode: 'insensitive',
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+    select: { name: true },
+  });
+
+  const emailName = emailConsultation?.name?.trim();
+  if (emailName) {
+    return emailName;
+  }
+
+  const localPart = fallbackEmail.trim().split('@')[0]?.trim();
+  if (localPart) {
+    return localPart;
+  }
+
+  return 'User';
 }
 
 /** Timezone for agreement timestamps: saved at sign-in, else consultation profile. */

@@ -5,14 +5,17 @@ import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useOptionalRefreshPortalAdminUnreadMessages } from '@/contexts/portal-admin-unread-messages-context';
 import { usePortalSupportRealtime } from '@/hooks/use-portal-support-realtime';
 import { formatPortalSupportMessageTime } from '@/lib/portal-support-format';
 import { mergePortalSupportMessages } from '@/lib/portal-support-realtime';
+import { PORTAL_MESSAGES_SECTION_ID } from '@/lib/portal-support-constants';
 import {
   PORTAL_SUPPORT_MESSAGE_MAX_LENGTH,
   portalSupportMessageSchema,
 } from '@/lib/portal-support-schema';
 import type { PortalSupportMessage } from '@/lib/portal-support-data';
+import { PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE } from '@/lib/portal-agreement-data';
 import { isSupabaseRealtimeConfigured } from '@/lib/supabase-browser';
 import { useToast } from '@/hooks/use-toast';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
@@ -28,6 +31,8 @@ type PortalSupportSectionProps = {
   /** @deprecated Prefer `audience` — overrides the section description when set. */
   description?: string;
   audience?: PortalSupportAudience;
+  /** Client portal: sending disabled until all project agreements are signed. Omit for admin views. */
+  allAgreementsSigned?: boolean;
 };
 
 function MessageBubble({
@@ -76,14 +81,17 @@ export function PortalSupportSection({
   projectId,
   description,
   audience = 'client',
+  allAgreementsSigned,
 }: PortalSupportSectionProps) {
   const { toast } = useToast();
+  const refreshUnreadMessages = useOptionalRefreshPortalAdminUnreadMessages();
   const { isSubmitting, runGuardedSubmit } = useSubmitGuard();
   const [messages, setMessages] = useState(initialMessages);
   const [progressId, setProgressId] = useState(initialProgressId);
   const [body, setBody] = useState('');
   const realtimeEnabled = isSupabaseRealtimeConfigured();
   const isAdmin = audience === 'admin';
+  const canSendMessages = allAgreementsSigned !== false;
   const sectionDescription =
     description ??
     (isAdmin
@@ -112,14 +120,48 @@ export function PortalSupportSection({
     setProgressId(initialProgressId);
   }, [initialProgressId]);
 
-  const handleRealtimeMessage = useCallback((message: PortalSupportMessage) => {
-    setMessages((current) => mergePortalSupportMessages(current, message));
-  }, []);
+  const handleRealtimeMessage = useCallback(
+    (message: PortalSupportMessage) => {
+      setMessages((current) => mergePortalSupportMessages(current, message));
+
+      if (message.kind === 'REQUEST') {
+        void refreshUnreadMessages?.();
+      }
+    },
+    [refreshUnreadMessages]
+  );
 
   usePortalSupportRealtime({
     progressId,
     onMessage: handleRealtimeMessage,
   });
+
+  useEffect(() => {
+    if (audience !== 'admin' || !projectId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function markViewed() {
+      const response = await fetch(
+        `/api/portal/admin/projects/${encodeURIComponent(projectId!)}/messages/viewed`,
+        { method: 'POST' }
+      );
+
+      if (!response.ok || cancelled) {
+        return;
+      }
+
+      await refreshUnreadMessages?.();
+    }
+
+    void markViewed();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [audience, projectId, refreshUnreadMessages]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -180,7 +222,11 @@ export function PortalSupportSection({
   }
 
   return (
-    <section className="mt-12 max-w-3xl" aria-labelledby="portal-support-heading">
+    <section
+      id={PORTAL_MESSAGES_SECTION_ID}
+      className="mt-12 max-w-3xl scroll-mt-28"
+      aria-labelledby="portal-support-heading"
+    >
       <h2 id="portal-support-heading" className="mb-2 text-2xl font-bold text-foreground">
         Messages
       </h2>
@@ -202,6 +248,10 @@ export function PortalSupportSection({
           </div>
         )}
 
+        {allAgreementsSigned === false && audience === 'client' ? (
+          <p className="mb-4 text-sm text-muted-foreground">{PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE}</p>
+        ) : null}
+
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="portal-support-message">{messageFieldLabel}</Label>
@@ -212,7 +262,7 @@ export function PortalSupportSection({
               placeholder={messagePlaceholder}
               rows={4}
               maxLength={PORTAL_SUPPORT_MESSAGE_MAX_LENGTH}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !canSendMessages}
               className="border-border bg-secondary/30 text-foreground"
               aria-describedby="portal-support-message-count"
             />
@@ -225,7 +275,10 @@ export function PortalSupportSection({
             </p>
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting || body.trim().length < 10}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !canSendMessages || body.trim().length < 10}
+            >
               <Send className="size-4" aria-hidden />
               {isSubmitting ? 'Sending…' : 'Send Message'}
             </Button>

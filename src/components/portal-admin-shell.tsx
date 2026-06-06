@@ -9,6 +9,11 @@ import {
   usePortalAdminCategoryCounts,
 } from '@/contexts/portal-admin-category-counts-context';
 import {
+  PortalAdminUnreadMessagesProvider,
+  usePortalAdminUnreadMessages,
+  type PortalAdminUnreadMessagesState,
+} from '@/contexts/portal-admin-unread-messages-context';
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -27,6 +32,7 @@ const navToggleRowClassName =
 type PortalAdminShellProps = {
   children: React.ReactNode;
   clientCategoryCounts: PortalAdminClientCategoryCounts;
+  initialUnreadMessages: PortalAdminUnreadMessagesState;
 };
 
 function PortalAdminShellNav({
@@ -43,12 +49,14 @@ function PortalAdminShellNav({
   onNavigate?: () => void;
 }) {
   const counts = usePortalAdminCategoryCounts();
+  const unreadMessages = usePortalAdminUnreadMessages();
 
   return (
     <PortalAdminNav
       collapsed={collapsed}
       pendingExpandSectionId={pendingExpandSectionId}
       clientCategoryCounts={counts}
+      unreadMessages={unreadMessages}
       onPendingExpandHandled={onPendingExpandHandled}
       onRequestExpand={onRequestExpand}
       onNavigate={onNavigate}
@@ -56,7 +64,11 @@ function PortalAdminShellNav({
   );
 }
 
-export function PortalAdminShell({ children, clientCategoryCounts }: PortalAdminShellProps) {
+export function PortalAdminShell({
+  children,
+  clientCategoryCounts,
+  initialUnreadMessages,
+}: PortalAdminShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(false);
   const [pendingExpandSectionId, setPendingExpandSectionId] = React.useState<string | null>(null);
@@ -94,6 +106,7 @@ export function PortalAdminShell({ children, clientCategoryCounts }: PortalAdmin
 
   return (
     <PortalAdminCategoryCountsProvider initialCounts={clientCategoryCounts}>
+      <PortalAdminUnreadMessagesProvider initialUnreadMessages={initialUnreadMessages}>
       <div className="flex flex-1 bg-background pt-20">
       <aside
         className={cn(
@@ -173,6 +186,7 @@ export function PortalAdminShell({ children, clientCategoryCounts }: PortalAdmin
         {children}
       </div>
     </div>
+      </PortalAdminUnreadMessagesProvider>
     </PortalAdminCategoryCountsProvider>
   );
 }

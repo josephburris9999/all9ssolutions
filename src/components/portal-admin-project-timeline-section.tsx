@@ -27,6 +27,7 @@ export function PortalAdminProjectTimelineSection({
       actions={
         projects.length > 0 ? (
           <PortalAdminUpdateEstimatedCompletion
+            key="update-estimated-completion"
             projectId={projectId}
             projects={projects}
             referenceNow={referenceNow}

@@ -10,26 +10,23 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PortalAdminAddProjectAgreementDialog } from '@/components/portal-admin-add-project-agreement-dialog';
 import { PortalAgreementBody } from '@/components/portal-agreement-body';
+import {
+  buildPortalAgreementSignatureRenderContext,
+  PortalAgreementSignatureBlock,
+  portalAgreementSignatureHeadingForKind,
+} from '@/components/portal-agreement-signature-block';
 import {
   formatPortalSignedAt,
   getBrowserTimeZone,
-  getPortalAgreementSectionsForClient,
+  getPortalAgreementContentSections,
   type PortalAgreementStatus,
 } from '@/lib/portal-agreement';
 import type { PortalAgreementListItem } from '@/lib/portal-agreement-data';
 import { agreementPdfDownloadFilename } from '@/lib/portal-agreement-filename';
 import { getPortalAgreementPdfPath, getPortalAgreementSignPath } from '@/lib/portal-agreement-paths';
-import { CONSULTATION_NAME_MAX_LENGTH } from '@/lib/field-lengths';
 import type { PortalClientProfile } from '@/lib/portal-user';
 import { useToast } from '@/hooks/use-toast';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
@@ -46,6 +43,8 @@ type PortalAgreementSectionProps = {
   initialAccordionCollapsed?: boolean;
   /** Admin portal: show Add Agreement below the agreements accordion. */
   showAddAgreementButton?: boolean;
+  /** Required when `showAddAgreementButton` is true. */
+  projectId?: string | null;
 };
 
 function formatAgreementClientParty(profile: PortalClientProfile): string {
@@ -93,7 +92,6 @@ function PortalAgreementCard({
   const router = useRouter();
   const { toast } = useToast();
   const [status, setStatus] = useState(item.status);
-  const [signerName, setSignerName] = useState(clientProfile.name);
   const [accepted, setAccepted] = useState(false);
   const { isSubmitting, runGuardedSubmit } = useSubmitGuard();
   const [isDownloading, setIsDownloading] = useState(false);
@@ -110,24 +108,28 @@ function PortalAgreementCard({
       return null;
     }
 
-    const signedAtLabel = signedLabel;
+    return getPortalAgreementContentSections();
+  }, [item.kind]);
 
-    return getPortalAgreementSectionsForClient({
-      client: clientProfile,
-      timeZone: displayTimeZone,
-      signature:
-        status.signed && status.signerName && status.signedAt && signedAtLabel
-          ? { signerName: status.signerName, signedAt: status.signedAt, signedAtLabel }
-          : undefined,
-    });
-  }, [clientProfile, displayTimeZone, item.kind, signedLabel, status]);
+  const signatureContext = useMemo(
+    () =>
+      buildPortalAgreementSignatureRenderContext({
+        clientProfile,
+        timeZone: displayTimeZone,
+        clientAccepted: accepted && !status.signed,
+        signed: status.signed,
+        signerName: status.signerName,
+        signedAt: status.signedAt,
+        signedAtLabel: signedLabel,
+      }),
+    [accepted, clientProfile, displayTimeZone, signedLabel, status]
+  );
 
-  useEffect(() => {
-    if (!status.signed) {
-      setSignerName(clientProfile.name);
-    }
-  }, [clientProfile.name, status.signed]);
+  const hasAgreementBody =
+    item.kind === 'client' ||
+    Boolean(item.body?.trim());
 
+  const clientSignerName = clientProfile.name.trim();
   const accordionValue = agreementAccordionValue(item.id);
   const displayTitle =
     item.projectTitle && item.kind === 'project'
@@ -145,7 +147,7 @@ function PortalAgreementCard({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          signerName,
+          signerName: clientSignerName,
           accepted,
           signedAt,
           clientTimeZone: signTimeZone,
@@ -262,6 +264,14 @@ function PortalAgreementCard({
               </p>
             )
           ) : null}
+          <PortalAgreementSignatureBlock
+            clientProfile={clientProfile}
+            timeZone={displayTimeZone}
+            clientAccepted={signatureContext.clientAccepted}
+            signature={signatureContext.signature}
+            heading={portalAgreementSignatureHeadingForKind(item.kind)}
+            separated={hasAgreementBody}
+          />
         </div>
 
         {status.signed ? (
@@ -287,25 +297,12 @@ function PortalAgreementCard({
                 htmlFor={`agreement-accepted-${item.id}`}
                 className="text-sm font-normal leading-relaxed text-muted-foreground"
               >
-                I have read and agree to the {item.title}. I understand that typing my name below
+                I have read and agree to the {item.title}. I understand that checking this box
                 constitutes my electronic signature.
               </Label>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor={`agreement-signer-name-${item.id}`}>Full legal name</Label>
-              <Input
-                id={`agreement-signer-name-${item.id}`}
-                value={signerName}
-                onChange={(event) => setSignerName(event.target.value)}
-                autoComplete="name"
-                required
-                maxLength={CONSULTATION_NAME_MAX_LENGTH}
-                placeholder="Jane Client"
-              />
-            </div>
-
-            <Button type="submit" disabled={isSubmitting || !accepted || signerName.trim().length < 2}>
+            <Button type="submit" disabled={isSubmitting || !accepted || clientSignerName.length < 2}>
               {isSubmitting ? 'Signing…' : 'Sign Agreement'}
             </Button>
           </form>
@@ -324,6 +321,7 @@ export function PortalAgreementSection({
   consultationRequestId,
   initialAccordionCollapsed = false,
   showAddAgreementButton = false,
+  projectId = null,
 }: PortalAgreementSectionProps) {
   const [statusById, setStatusById] = useState<Record<string, PortalAgreementStatus>>(() =>
     Object.fromEntries(agreements.map((item) => [item.id, item.status]))
@@ -390,28 +388,21 @@ export function PortalAgreementSection({
         </Accordion>
       )}
 
-      {showAddAgreementButton ? (
+      {showAddAgreementButton && projectId ? (
         <>
           <Button
             type="button"
             variant="outline"
-            className="mt-2 w-full"
+            className="mt-6 w-full"
             onClick={() => setAddAgreementOpen(true)}
           >
             Add Agreement
           </Button>
-          <Dialog open={addAgreementOpen} onOpenChange={setAddAgreementOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Coming Soon</DialogTitle>
-              </DialogHeader>
-              <DialogFooter>
-                <Button type="button" onClick={() => setAddAgreementOpen(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <PortalAdminAddProjectAgreementDialog
+            projectId={projectId}
+            open={addAgreementOpen}
+            onOpenChange={setAddAgreementOpen}
+          />
         </>
       ) : null}
     </section>
