@@ -1,19 +1,40 @@
 import type { Metadata } from 'next';
-import { PortalAdminCompletedClientsSection } from '@/components/portal-admin-completed-clients-section';
+import { Suspense } from 'react';
+import { PortalAdminCompletedProjectWorkspaceSections } from '@/components/portal-admin-completed-project-workspace';
+import { PortalAdminCompletedProjectsPanel } from '@/components/portal-admin-completed-projects-panel';
 import { getPortalAdminCompletedClients } from '@/lib/portal-admin-consultations';
+import { loadPortalAdminCompletedProjectWorkspace } from '@/lib/portal-admin-completed-project-workspace';
 import { getPortalSession } from '@/lib/portal-auth';
-import { getPortalClientName } from '@/lib/portal-user';
+import { getPortalAdminSignedInDisplayName } from '@/lib/portal-admin-session-display';
 
 export const metadata: Metadata = {
   title: 'Completed Clients | Admin Portal | all9s Solutions',
   description: 'Clients with completed projects in the all9s Solutions admin portal.',
 };
 
-export default async function PortalAdminCompletedClientsPage() {
+type PortalAdminCompletedClientsPageProps = {
+  searchParams: Promise<{ client?: string; project?: string }>;
+};
+
+export default async function PortalAdminCompletedClientsPage({
+  searchParams,
+}: PortalAdminCompletedClientsPageProps) {
+  const { client: selectedConsultationId, project: selectedProjectId } = await searchParams;
   const [session, clients] = await Promise.all([getPortalSession(), getPortalAdminCompletedClients()]);
-  const displayName = session
-    ? await getPortalClientName(session.userId, session.email)
-    : 'Admin';
+  const displayName = session ? await getPortalAdminSignedInDisplayName() : 'Admin';
+
+  const workspace =
+    selectedConsultationId != null && selectedConsultationId.length > 0
+      ? await loadPortalAdminCompletedProjectWorkspace(
+          selectedConsultationId,
+          selectedProjectId ?? null
+        )
+      : null;
+
+  const selectedId =
+    workspace != null && selectedConsultationId != null && selectedConsultationId.length > 0
+      ? selectedConsultationId
+      : null;
 
   return (
     <>
@@ -28,7 +49,7 @@ export default async function PortalAdminCompletedClientsPage() {
             Signed in as <span className="text-foreground">{displayName}</span>
           </p>
           <div className="max-w-2xl space-y-4 text-lg leading-relaxed text-muted-foreground">
-            <p>Clients with at least one completed project.</p>
+            <p>Clients with at least one completed project. Select a project to review its record.</p>
           </div>
         </div>
         <div className="absolute bottom-0 left-1/2 z-[1] h-[1px] w-full -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
@@ -36,9 +57,13 @@ export default async function PortalAdminCompletedClientsPage() {
 
       <section className="relative bg-background px-[1.25rem] py-24">
         <div className="container mx-auto px-4">
-          <PortalAdminCompletedClientsSection clients={clients} />
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading projects…</p>}>
+            <PortalAdminCompletedProjectsPanel clients={clients} selectedConsultationId={selectedId} />
+          </Suspense>
         </div>
       </section>
+
+      {workspace ? <PortalAdminCompletedProjectWorkspaceSections workspace={workspace} /> : null}
     </>
   );
 }

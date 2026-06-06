@@ -8,13 +8,12 @@ import type {
   PortalAdminConsultationDetail,
 } from '@/lib/portal-admin-client-display';
 import { loadPortalDashboardView } from '@/lib/portal-dashboard-data';
-import { getPortalSession } from '@/lib/portal-auth';
+import { getPortalAdminSignedInDisplayName } from '@/lib/portal-admin-session-display';
 import {
   listSelectablePortalProjects,
   portalProjectDashboardHref,
   resolvePortalProjectGate,
 } from '@/lib/portal-projects';
-import { getPortalClientName } from '@/lib/portal-user';
 
 type PortalAdminClientPortalViewProps = {
   client: PortalAdminConsultationDetail | PortalAdminConsultationClientDetail;
@@ -41,10 +40,7 @@ export async function PortalAdminClientPortalView({
   allowCreatePortalAccount = false,
   showConsultationRequestsSection = false,
 }: PortalAdminClientPortalViewProps) {
-  const session = await getPortalSession();
-  const adminDisplayName = session
-    ? await getPortalClientName(session.userId, session.email)
-    : 'Admin';
+  const adminDisplayName = await getPortalAdminSignedInDisplayName();
 
   const consultationClient = isConsultationClientDetail(client) ? client : null;
 
@@ -78,14 +74,18 @@ export async function PortalAdminClientPortalView({
 
   if (!client.portalUserId) {
     const dashboard = await loadPortalDashboardView(dashboardContext);
-    return <PortalClientDashboard {...dashboard} {...dashboardExtras} />;
+    return (
+      <PortalClientDashboard {...dashboard} {...dashboardExtras} heroIdentityName={adminDisplayName} />
+    );
   }
 
   const projects = await listSelectablePortalProjects(client.portalUserId);
 
   if (projects.length === 0) {
     const dashboard = await loadPortalDashboardView(dashboardContext);
-    return <PortalClientDashboard {...dashboard} {...dashboardExtras} />;
+    return (
+      <PortalClientDashboard {...dashboard} {...dashboardExtras} heroIdentityName={adminDisplayName} />
+    );
   }
 
   const gate = resolvePortalProjectGate(projects, selectedProjectId);
@@ -99,6 +99,7 @@ export async function PortalAdminClientPortalView({
       <PortalProjectPicker
         projects={projects}
         basePath={basePath}
+        signedInDisplayName={adminDisplayName}
         title="Select a project"
         description={`Choose which project to view for ${client.name.trim() || 'this client'}.`}
       />
@@ -124,7 +125,11 @@ export async function PortalAdminClientPortalView({
       {...dashboard}
       {...dashboardExtras}
       consultationRequestId={gate.project.consultationRequestId}
-      showAddAgreementButton
+      adminProjectWorkspace={{
+        projectId: gate.project.id,
+        projectStatus: gate.project.status,
+      }}
+      heroIdentityName={adminDisplayName}
     />
   );
 }

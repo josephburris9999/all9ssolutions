@@ -2,6 +2,7 @@ import 'server-only';
 
 import { prisma } from '@/lib/prisma';
 import { isPortalAdminRole } from '@/lib/portal-role-data';
+import { CLIENT_PORTAL_ACTIVE_PROJECT_STATUSES } from '@/lib/portal-projects';
 import type { PortalSupportMessage } from '@/lib/portal-support-data';
 import { PORTAL_SUPPORT_PROGRESS_TITLE } from '@/lib/portal-support-constants';
 
@@ -47,6 +48,7 @@ export async function resolvePortalSupportProjectForSession(
     where: { id: trimmed },
     select: {
       id: true,
+      status: true,
       portalUserId: true,
       portalUser: { select: { role: true } },
     },
@@ -65,6 +67,14 @@ export async function resolvePortalSupportProjectForSession(
   }
 
   if (project.portalUserId !== session.userId) {
+    return { ok: false, status: 404, error: 'Project not found' };
+  }
+
+  if (
+    !(
+      CLIENT_PORTAL_ACTIVE_PROJECT_STATUSES as readonly string[]
+    ).includes(project.status)
+  ) {
     return { ok: false, status: 404, error: 'Project not found' };
   }
 

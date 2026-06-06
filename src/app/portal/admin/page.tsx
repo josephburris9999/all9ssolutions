@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { PortalAdminToolsSection } from '@/components/portal-admin-tools-section';
 import { getPortalSession } from '@/lib/portal-auth';
-import { getPortalClientName } from '@/lib/portal-user';
+import { getPortalAdminSignedInDisplayName } from '@/lib/portal-admin-session-display';
 
 export const metadata: Metadata = {
   title: 'Admin Portal | all9s Solutions',
@@ -10,9 +10,7 @@ export const metadata: Metadata = {
 
 export default async function PortalAdminPage() {
   const session = await getPortalSession();
-  const displayName = session
-    ? await getPortalClientName(session.userId, session.email)
-    : 'Admin';
+  const displayName = session ? await getPortalAdminSignedInDisplayName() : 'Admin';
 
   return (
     <>

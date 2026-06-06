@@ -2,11 +2,10 @@ import 'server-only';
 
 import type { ProjectStatus } from '@/generated/prisma/client';
 import {
-  getPortalAdminCompletedClientDetailPath,
-  getPortalAdminCurrentClientDetailPath,
+  getPortalAdminCompletedClientsPageHref,
+  getPortalAdminCurrentClientsPageHref,
 } from '@/lib/portal-admin-client-display';
 import { prisma } from '@/lib/prisma';
-import { portalProjectDashboardHref } from '@/lib/portal-role-data';
 import { PORTAL_MESSAGES_SECTION_ID, PORTAL_SUPPORT_PROGRESS_TITLE } from '@/lib/portal-support-constants';
 
 const ACTIVE_PROJECT_STATUSES: ProjectStatus[] = ['PLANNED', 'ACTIVE', 'ON_HOLD'];
@@ -26,14 +25,25 @@ export function buildPortalAdminMessagesSectionHref(options: {
   projectStatus: ProjectStatus;
 }): string {
   const hash = `#${PORTAL_MESSAGES_SECTION_ID}`;
-  const basePath =
-    options.projectStatus === 'COMPLETED'
-      ? getPortalAdminCompletedClientDetailPath(options.consultationRequestId)
-      : ACTIVE_PROJECT_STATUSES.includes(options.projectStatus)
-        ? getPortalAdminCurrentClientDetailPath(options.consultationRequestId)
-        : getPortalAdminCompletedClientDetailPath(options.consultationRequestId);
 
-  return `${portalProjectDashboardHref(basePath, options.projectId)}${hash}`;
+  if (options.projectStatus === 'COMPLETED') {
+    return `${getPortalAdminCompletedClientsPageHref(
+      options.consultationRequestId,
+      options.projectId
+    )}${hash}`;
+  }
+
+  if (ACTIVE_PROJECT_STATUSES.includes(options.projectStatus)) {
+    return `${getPortalAdminCurrentClientsPageHref(
+      options.consultationRequestId,
+      options.projectId
+    )}${hash}`;
+  }
+
+  return `${getPortalAdminCompletedClientsPageHref(
+    options.consultationRequestId,
+    options.projectId
+  )}${hash}`;
 }
 
 export async function getPortalAdminUnreadMessageProjects(): Promise<PortalAdminUnreadMessageProject[]> {

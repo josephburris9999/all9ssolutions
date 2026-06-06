@@ -13,6 +13,7 @@ export type PortalAdminCurrentProjectWorkspace = {
   consultationRequestId: string;
   projectId: string;
   projectTitle: string;
+  projectStatus: string;
 };
 
 export async function loadPortalAdminCurrentProjectWorkspace(
@@ -68,5 +69,6 @@ export async function loadPortalAdminCurrentProjectWorkspace(
     consultationRequestId,
     projectId: project.id,
     projectTitle: project.title.trim() || 'Untitled project',
+    projectStatus: project.status,
   };
 }

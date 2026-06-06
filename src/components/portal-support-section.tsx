@@ -33,6 +33,13 @@ type PortalSupportSectionProps = {
   audience?: PortalSupportAudience;
   /** Client portal: sending disabled until all project agreements are signed. Omit for admin views. */
   allAgreementsSigned?: boolean;
+  /**
+   * Admin Current Projects inline workspace (`?client=`): realtime inserts and mark-as-viewed.
+   * Off elsewhere so the detail dashboard and other admin views do not subscribe on load.
+   */
+  enableAdminMessageListening?: boolean;
+  /** Hide compose controls; messages still display. */
+  readOnly?: boolean;
 };
 
 function MessageBubble({
@@ -82,6 +89,8 @@ export function PortalSupportSection({
   description,
   audience = 'client',
   allAgreementsSigned,
+  enableAdminMessageListening = false,
+  readOnly = false,
 }: PortalSupportSectionProps) {
   const { toast } = useToast();
   const refreshUnreadMessages = useOptionalRefreshPortalAdminUnreadMessages();
@@ -94,16 +103,21 @@ export function PortalSupportSection({
   const canSendMessages = allAgreementsSigned !== false;
   const sectionDescription =
     description ??
-    (isAdmin
-      ? `Messages from all9s Solutions to the client. Replies from the client will appear here${
-          realtimeEnabled ? ' in real time' : ''
-        }.`
-      : `Send questions and updates to all9s Solutions. Replies from our team will appear here${
-          realtimeEnabled ? ' in real time' : ''
-        }.`);
-  const emptyMessage = isAdmin
-    ? 'No messages yet. Send a message to the client below.'
-    : 'No messages yet. Start a conversation with all9s Solutions below.';
+    (readOnly && isAdmin
+      ? 'Message history between all9s Solutions and the client for this project.'
+      : isAdmin
+        ? `Messages from all9s Solutions to the client. Replies from the client will appear here${
+            realtimeEnabled ? ' in real time' : ''
+          }.`
+        : `Send questions and updates to all9s Solutions. Replies from our team will appear here${
+            realtimeEnabled ? ' in real time' : ''
+          }.`);
+  const emptyMessage =
+    readOnly && isAdmin
+      ? 'No messages for this project.'
+      : isAdmin
+        ? 'No messages yet. Send a message to the client below.'
+        : 'No messages yet. Start a conversation with all9s Solutions below.';
   const messageFieldLabel = isAdmin ? 'Message to client' : 'Your message';
   const messagePlaceholder = isAdmin
     ? 'Send an update or reply to the client about their project…'
@@ -131,13 +145,16 @@ export function PortalSupportSection({
     [refreshUnreadMessages]
   );
 
+  const shouldListenForMessages =
+    audience === 'client' || (audience === 'admin' && enableAdminMessageListening);
+
   usePortalSupportRealtime({
-    progressId,
+    progressId: shouldListenForMessages ? progressId : null,
     onMessage: handleRealtimeMessage,
   });
 
   useEffect(() => {
-    if (audience !== 'admin' || !projectId) {
+    if (audience !== 'admin' || !enableAdminMessageListening || !projectId) {
       return;
     }
 
@@ -161,7 +178,7 @@ export function PortalSupportSection({
     return () => {
       cancelled = true;
     };
-  }, [audience, projectId, refreshUnreadMessages]);
+  }, [audience, enableAdminMessageListening, projectId, refreshUnreadMessages]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -234,9 +251,11 @@ export function PortalSupportSection({
 
       <div className="rounded-lg border border-border bg-card p-6">
         {messages.length === 0 ? (
-          <p className="mb-6 text-sm text-muted-foreground">{emptyMessage}</p>
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
-          <div className="mb-6 max-h-96 space-y-4 overflow-y-auto pr-1">
+          <div
+            className={`max-h-96 space-y-4 overflow-y-auto pr-1${readOnly ? '' : ' mb-6'}`}
+          >
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -252,38 +271,40 @@ export function PortalSupportSection({
           <p className="mb-4 text-sm text-muted-foreground">{PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE}</p>
         ) : null}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="portal-support-message">{messageFieldLabel}</Label>
-            <Textarea
-              id="portal-support-message"
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder={messagePlaceholder}
-              rows={4}
-              maxLength={PORTAL_SUPPORT_MESSAGE_MAX_LENGTH}
-              disabled={isSubmitting || !canSendMessages}
-              className="border-border bg-secondary/30 text-foreground"
-              aria-describedby="portal-support-message-count"
-            />
-            <p
-              id="portal-support-message-count"
-              className="text-right text-xs text-muted-foreground tabular-nums"
-              aria-live="polite"
-            >
-              {body.length.toLocaleString()} / {PORTAL_SUPPORT_MESSAGE_MAX_LENGTH.toLocaleString()}
-            </p>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={isSubmitting || !canSendMessages || body.trim().length < 10}
-            >
-              <Send className="size-4" aria-hidden />
-              {isSubmitting ? 'Sending…' : 'Send Message'}
-            </Button>
-          </div>
-        </form>
+        {!readOnly ? (
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="portal-support-message">{messageFieldLabel}</Label>
+              <Textarea
+                id="portal-support-message"
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                placeholder={messagePlaceholder}
+                rows={4}
+                maxLength={PORTAL_SUPPORT_MESSAGE_MAX_LENGTH}
+                disabled={isSubmitting || !canSendMessages}
+                className="border-border bg-secondary/30 text-foreground"
+                aria-describedby="portal-support-message-count"
+              />
+              <p
+                id="portal-support-message-count"
+                className="text-right text-xs text-muted-foreground tabular-nums"
+                aria-live="polite"
+              >
+                {body.length.toLocaleString()} / {PORTAL_SUPPORT_MESSAGE_MAX_LENGTH.toLocaleString()}
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={isSubmitting || !canSendMessages || body.trim().length < 10}
+              >
+                <Send className="size-4" aria-hidden />
+                {isSubmitting ? 'Sending…' : 'Send Message'}
+              </Button>
+            </div>
+          </form>
+        ) : null}
       </div>
     </section>
   );

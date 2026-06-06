@@ -15,8 +15,11 @@ import { cn } from '@/lib/utils';
 export type PortalAdminClientsTableProps = {
   rows: PortalAdminConsultationRow[];
   detailPathPrefix: string;
+  /** When set, used for the name link instead of `${detailPathPrefix}/${row.id}`. */
+  getRowDetailHref?: (row: PortalAdminConsultationRow) => string;
   emptyMessage: string;
   secondaryColumn?: 'company' | 'project';
+  showSecondaryColumn?: boolean;
   showPhoneColumn?: boolean;
   scrollContainerClassName?: string;
   selectionMode?: boolean;
@@ -127,8 +130,10 @@ function SortableHeader({ label, column, sort, onSort, className }: SortableHead
 export function PortalAdminClientsTable({
   rows,
   detailPathPrefix,
+  getRowDetailHref,
   emptyMessage,
   secondaryColumn = 'company',
+  showSecondaryColumn = true,
   showPhoneColumn = true,
   scrollContainerClassName,
   selectionMode = false,
@@ -150,9 +155,11 @@ export function PortalAdminClientsTable({
   }
 
   function renderPrimaryCell(row: PortalAdminConsultationRow, isSelected: boolean) {
+    const href = getRowDetailHref?.(row) ?? `${detailPathPrefix}/${row.id}`;
+
     return (
       <Link
-        href={`${detailPathPrefix}/${row.id}`}
+        href={href}
         onClick={selectionMode ? (event) => event.stopPropagation() : undefined}
         className={cn(
           'group inline-flex min-w-0 items-center gap-2 font-medium transition-colors hover:text-primary',
@@ -175,13 +182,15 @@ export function PortalAdminClientsTable({
             <thead>
               <tr className="border-b border-border bg-secondary/30 text-left">
                 <SortableHeader label="Name" column="name" sort={sort} onSort={handleSort} />
-                <SortableHeader
-                  label={secondaryColumnLabel}
-                  column={secondaryColumnKey}
-                  sort={sort}
-                  onSort={handleSort}
-                  className="hidden md:table-cell"
-                />
+                {showSecondaryColumn ? (
+                  <SortableHeader
+                    label={secondaryColumnLabel}
+                    column={secondaryColumnKey}
+                    sort={sort}
+                    onSort={handleSort}
+                    className="hidden md:table-cell"
+                  />
+                ) : null}
                 <th scope="col" className="hidden px-4 py-3 font-medium text-foreground lg:table-cell">
                   Email
                 </th>
@@ -227,11 +236,13 @@ export function PortalAdminClientsTable({
                   )}
                 >
                   <td className="px-4 py-3">{renderPrimaryCell(row, isSelected)}</td>
-                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                    {secondaryColumn === 'project'
-                      ? row.projectTitle ?? '—'
-                      : row.company ?? '—'}
-                  </td>
+                  {showSecondaryColumn ? (
+                    <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
+                      {secondaryColumn === 'project'
+                        ? row.projectTitle ?? '—'
+                        : row.company ?? '—'}
+                    </td>
+                  ) : null}
                   <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">
                     <a
                       href={`mailto:${encodeURIComponent(row.email)}`}

@@ -9,6 +9,7 @@ import type { PortalClientProfile } from '@/lib/portal-user';
 type PortalClientConsultationRequestsSectionProps = {
   requests: PortalConsultationRequestDetail[];
   linkedProjects?: PortalConsultationRequestLinkedProject[];
+  activeProjectIds?: ReadonlySet<string>;
   clientProfile: PortalClientProfile;
   clientTimezone: string | null;
 };
@@ -16,6 +17,7 @@ type PortalClientConsultationRequestsSectionProps = {
 export function PortalClientConsultationRequestsSection({
   requests,
   linkedProjects,
+  activeProjectIds,
   clientProfile,
   clientTimezone,
 }: PortalClientConsultationRequestsSectionProps) {
@@ -32,6 +34,7 @@ export function PortalClientConsultationRequestsSection({
         <PortalConsultationRequestsAccordion
           requests={requests}
           linkedProjects={linkedProjects}
+          activeProjectIds={activeProjectIds}
           projectDashboardBasePath={PORTAL_CLIENT_DASHBOARD_PATH}
           clientProfile={clientProfile}
           clientTimezone={clientTimezone}

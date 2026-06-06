@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { PortalDashboardSession } from '@/components/portal-dashboard-session';
 import { PortalProjectDashboardLoader } from '@/components/portal-project-dashboard-loader';
 import { getPortalSession } from '@/lib/portal-auth';
+import { ensureClientPortalAccess } from '@/lib/portal-client-access';
 import { isPortalAdminRole, PORTAL_ADMIN_PATH, PORTAL_CLIENT_DASHBOARD_PATH } from '@/lib/portal-role-data';
 
 export const metadata: Metadata = {
@@ -24,6 +25,8 @@ export default async function PortalDashboardPage({ searchParams }: PortalDashbo
   if (isPortalAdminRole(session.role)) {
     redirect(PORTAL_ADMIN_PATH);
   }
+
+  await ensureClientPortalAccess(session);
 
   const { project: selectedProjectId } = await searchParams;
 

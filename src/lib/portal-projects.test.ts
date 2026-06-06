@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   portalProjectDashboardHref,
   resolvePortalProjectGate,
+  resolvePortalClientProjectGate,
   type PortalProjectOption,
 } from '@/lib/portal-projects';
 
@@ -62,5 +63,21 @@ describe('portalProjectDashboardHref', () => {
     expect(portalProjectDashboardHref('/portal/dashboard', 'proj_1')).toBe(
       '/portal/dashboard?project=proj_1'
     );
+  });
+});
+
+describe('resolvePortalClientProjectGate', () => {
+  it('returns landing when a completed project id is not in the active list', () => {
+    expect(resolvePortalClientProjectGate([project('a')], 'completed-only')).toEqual({
+      kind: 'landing',
+    });
+  });
+
+  it('is ready for an active project selection', () => {
+    const active = project('a');
+    expect(resolvePortalClientProjectGate([active], 'a')).toEqual({
+      kind: 'ready',
+      project: active,
+    });
   });
 });

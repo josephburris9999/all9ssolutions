@@ -6,6 +6,7 @@ import {
   PortalContentUploadError,
   readPortalContentUploadBytes,
 } from '@/lib/portal-content-upload';
+import { portalUserOwnsActiveProject } from '@/lib/portal-project-access';
 
 export async function loadPortalContentUploadForDownload(options: {
   uploadId: string;
@@ -14,6 +15,13 @@ export async function loadPortalContentUploadForDownload(options: {
   const record = await getPortalContentUploadById(options.uploadId);
 
   if (!record || record.projectPortalUserId !== options.portalUserId) {
+    throw new PortalContentUploadError('Upload not found');
+  }
+
+  if (
+    record.projectId &&
+    !(await portalUserOwnsActiveProject(options.portalUserId, record.projectId))
+  ) {
     throw new PortalContentUploadError('Upload not found');
   }
 

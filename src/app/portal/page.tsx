@@ -3,7 +3,8 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { PortalLoginForm } from '@/components/portal-login-form';
 import { getPortalSession } from '@/lib/portal-auth';
-import { getPortalHomePath, PORTAL_CLIENT_DASHBOARD_PATH } from '@/lib/portal-role-data';
+import { ensureClientPortalAccess } from '@/lib/portal-client-access';
+import { getPortalHomePath, isPortalAdminRole, PORTAL_CLIENT_DASHBOARD_PATH } from '@/lib/portal-role-data';
 import {
   Card,
   CardDescription,
@@ -38,6 +39,11 @@ const portalFeatures = [
 export default async function PortalPage() {
   const session = await getPortalSession();
   if (session) {
+    if (isPortalAdminRole(session.role)) {
+      redirect(getPortalHomePath(session.role));
+    }
+
+    await ensureClientPortalAccess(session);
     redirect(session.mustChangePassword ? PORTAL_CLIENT_DASHBOARD_PATH : getPortalHomePath(session.role));
   }
 

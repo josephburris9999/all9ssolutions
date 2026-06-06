@@ -12,6 +12,12 @@ import type {
 import type { PortalDashboardView } from '@/lib/portal-dashboard-data';
 import { PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE } from '@/lib/portal-agreement-data';
 
+/** Admin portal: project-scoped controls (Add/Complete agreement, etc.). */
+export type PortalAdminProjectWorkspaceProps = {
+  projectId: string;
+  projectStatus: string;
+};
+
 type PortalClientDashboardProps = PortalDashboardView & {
   heroTitle?: string;
   heroIdentityPrefix?: string;
@@ -28,9 +34,16 @@ type PortalClientDashboardProps = PortalDashboardView & {
   mustChangePassword?: boolean;
   /** Client projects used to resolve open-project links on consultation requests. */
   linkedProjectsForRequests?: PortalConsultationRequestLinkedProject[];
+  /** Client portal: only these project ids may be opened from consultation requests. */
+  activeProjectIds?: ReadonlySet<string>;
   /** Client portal: show project-scoped workspace sections (agreements, timeline, etc.). */
   showClientProjectWorkspace?: boolean;
-  /** Admin portal: show Add Agreement in the Agreements section. */
+  /**
+   * Admin portal viewing a client project (`/portal/admin/clients/.../[id]?project=`).
+   * Enables Add Agreement, Complete Project, and keeps Signed in as on the admin identity.
+   */
+  adminProjectWorkspace?: PortalAdminProjectWorkspaceProps | null;
+  /** @deprecated Prefer `adminProjectWorkspace`. */
   showAddAgreementButton?: boolean;
 };
 
@@ -57,7 +70,9 @@ export function PortalClientDashboard({
   showPasswordChangeButton = false,
   mustChangePassword = false,
   linkedProjectsForRequests,
+  activeProjectIds,
   showClientProjectWorkspace = false,
+  adminProjectWorkspace = null,
   showAddAgreementButton = false,
 }: PortalClientDashboardProps) {
   const requests = consultationRequests ?? [];
@@ -66,7 +81,11 @@ export function PortalClientDashboard({
   const workspaceProjectId = selectedProject?.id ?? null;
   const allAgreementsSigned = agreementStatus.signed;
   const supportAudience = consultationRequestId ? 'admin' : 'client';
-  const identityName = heroIdentityName ?? clientName;
+  const showAdminProjectControls = adminProjectWorkspace != null || showAddAgreementButton;
+  const adminProjectId = adminProjectWorkspace?.projectId ?? selectedProject?.id ?? null;
+  const adminProjectStatus = adminProjectWorkspace?.projectStatus;
+  const isAdminPortalView = consultationRequestId != null || adminProjectWorkspace != null;
+  const identityName = heroIdentityName ?? (isAdminPortalView ? 'Admin' : clientName);
   return (
     <>
       <section className="relative overflow-hidden bg-background px-[1.25rem] pb-16 pt-28 md:pb-20 md:pt-32">
@@ -106,6 +125,7 @@ export function PortalClientDashboard({
         <PortalClientConsultationRequestsSection
           requests={requests}
           linkedProjects={linkedProjectsForRequests}
+          activeProjectIds={activeProjectIds}
           clientProfile={clientProfile}
           clientTimezone={clientTimezone}
         />
@@ -190,9 +210,11 @@ export function PortalClientDashboard({
                 showSignedAgreementNotice={!consultationRequestId}
                 readOnly={Boolean(consultationRequestId)}
                 consultationRequestId={consultationRequestId}
-                initialAccordionCollapsed={showAddAgreementButton}
-                showAddAgreementButton={showAddAgreementButton}
-                projectId={selectedProject?.id ?? null}
+                initialAccordionCollapsed={showAdminProjectControls}
+                showAddAgreementButton={showAdminProjectControls}
+                showCompleteProjectButton={showAdminProjectControls}
+                projectId={adminProjectId}
+                projectStatus={adminProjectStatus}
               />
             </div>
           </section>
@@ -225,6 +247,8 @@ export function PortalClientDashboard({
                     initialMessages={supportThread.messages}
                     initialProgressId={supportThread.progressId}
                     timeZone={clientTimezone}
+                    projectId={adminProjectId ?? undefined}
+                    audience={supportAudience}
                     allAgreementsSigned={allAgreementsSigned}
                   />
                 </div>
@@ -237,7 +261,10 @@ export function PortalClientDashboard({
                     timeZone={clientTimezone}
                     readOnly={Boolean(consultationRequestId)}
                     consultationRequestId={consultationRequestId}
+                    projectId={adminProjectId}
                     allAgreementsSigned={allAgreementsSigned}
+                    showCompleteProjectButton={showAdminProjectControls}
+                    projectStatus={adminProjectStatus}
                   />
                 </div>
               </section>

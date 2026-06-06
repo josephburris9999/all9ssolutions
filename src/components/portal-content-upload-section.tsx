@@ -12,6 +12,8 @@ import {
 } from '@/lib/portal-content-upload-constants';
 import { formatPortalSupportMessageTime } from '@/lib/portal-support-format';
 import { PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE } from '@/lib/portal-agreement-data';
+import { PortalAdminCompleteProjectButton } from '@/components/portal-admin-complete-project-button';
+import { PortalAdminReactivateProjectButton } from '@/components/portal-admin-reactivate-project-button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
@@ -26,6 +28,11 @@ type PortalContentUploadSectionProps = {
   projectId?: string | null;
   /** Client portal: uploads disabled until all project agreements are signed. Omit for admin views. */
   allAgreementsSigned?: boolean;
+  /** Admin portal: show Complete Project at the bottom of the section. */
+  showCompleteProjectButton?: boolean;
+  /** Admin portal: show Make Current at the bottom of the section. */
+  showReactivateProjectButton?: boolean;
+  projectStatus?: string;
 };
 
 const ACCEPTED_TYPES =
@@ -38,6 +45,9 @@ export function PortalContentUploadSection({
   consultationRequestId,
   projectId,
   allAgreementsSigned,
+  showCompleteProjectButton = false,
+  showReactivateProjectButton = false,
+  projectStatus,
 }: PortalContentUploadSectionProps) {
   const { toast } = useToast();
   const { isSubmitting: isUploading, runGuardedSubmit } = useSubmitGuard();
@@ -273,6 +283,23 @@ export function PortalContentUploadSection({
           </ul>
         )}
       </div>
+
+      {showCompleteProjectButton && projectId ? (
+        <div className="mt-6 flex justify-end">
+          <PortalAdminCompleteProjectButton
+            projectId={projectId}
+            projectStatus={projectStatus}
+          />
+        </div>
+      ) : null}
+      {showReactivateProjectButton && projectId ? (
+        <div className="mt-6 flex justify-end">
+          <PortalAdminReactivateProjectButton
+            projectId={projectId}
+            projectStatus={projectStatus}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }

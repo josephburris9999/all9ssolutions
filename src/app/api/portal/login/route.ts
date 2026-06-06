@@ -8,7 +8,9 @@ import {
 } from '@/lib/portal-login-lock';
 import { portalLoginSchema } from '@/lib/portal-login-schema';
 import { normalizePortalEmail, findPortalUserByConsultationEmail } from '@/lib/portal-user';
-import { getPortalHomePath } from '@/lib/portal-role-data';
+import { getPortalHomePath, isPortalAdminRole } from '@/lib/portal-role-data';
+import { clientHasActivePortalProject } from '@/lib/portal-projects';
+import { CLIENT_PORTAL_NO_ACTIVE_PROJECT_MESSAGE } from '@/lib/portal-client-access';
 import { verifyPassword } from '@/lib/password';
 import {
   checkRateLimit,
@@ -66,6 +68,10 @@ export async function POST(request: Request) {
     }
 
     await resetPortalLoginAttempts(user.id);
+
+    if (!isPortalAdminRole(user.role) && !(await clientHasActivePortalProject(user.id))) {
+      return portalLoginError(CLIENT_PORTAL_NO_ACTIVE_PROJECT_MESSAGE, 403);
+    }
 
     const sessionCookie = createSessionCookieForUser({
       id: user.id,

@@ -73,8 +73,32 @@ export function getPortalAdminCurrentClientDetailPath(id: string): string {
   return `/portal/admin/clients/current/${id}`;
 }
 
+/** Current list page with inline workspace (`?client=`). */
+export function getPortalAdminCurrentClientsPageHref(
+  consultationRequestId: string,
+  projectId?: string | null
+): string {
+  const params = new URLSearchParams({ client: consultationRequestId });
+  if (projectId) {
+    params.set('project', projectId);
+  }
+  return `/portal/admin/clients/current?${params.toString()}`;
+}
+
 export function getPortalAdminCompletedClientDetailPath(id: string): string {
   return `/portal/admin/clients/completed/${id}`;
+}
+
+/** Completed list page with inline workspace (`?client=`). */
+export function getPortalAdminCompletedClientsPageHref(
+  consultationRequestId: string,
+  projectId?: string | null
+): string {
+  const params = new URLSearchParams({ client: consultationRequestId });
+  if (projectId) {
+    params.set('project', projectId);
+  }
+  return `/portal/admin/clients/completed?${params.toString()}`;
 }
 
 export function formatPortalAdminConsultationDate(iso: string): string {

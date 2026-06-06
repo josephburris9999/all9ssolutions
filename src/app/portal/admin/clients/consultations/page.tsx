@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { PortalAdminConsultationsSection } from '@/components/portal-admin-consultations-section';
 import { getPortalAdminConsultations } from '@/lib/portal-admin-consultations';
 import { getPortalSession } from '@/lib/portal-auth';
-import { getPortalClientName } from '@/lib/portal-user';
+import { getPortalAdminSignedInDisplayName } from '@/lib/portal-admin-session-display';
 
 export const metadata: Metadata = {
   title: 'Consultations | Admin Portal | all9s Solutions',
@@ -11,9 +11,7 @@ export const metadata: Metadata = {
 
 export default async function PortalAdminConsultationsPage() {
   const [session, clients] = await Promise.all([getPortalSession(), getPortalAdminConsultations()]);
-  const displayName = session
-    ? await getPortalClientName(session.userId, session.email)
-    : 'Admin';
+  const displayName = session ? await getPortalAdminSignedInDisplayName() : 'Admin';
 
   return (
     <>

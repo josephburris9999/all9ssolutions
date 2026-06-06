@@ -5,7 +5,7 @@ import { PortalAdminCurrentProjectsPanel } from '@/components/portal-admin-curre
 import { getPortalAdminCurrentClients } from '@/lib/portal-admin-consultations';
 import { loadPortalAdminCurrentProjectWorkspace } from '@/lib/portal-admin-current-project-workspace';
 import { getPortalSession } from '@/lib/portal-auth';
-import { getPortalClientName } from '@/lib/portal-user';
+import { getPortalAdminSignedInDisplayName } from '@/lib/portal-admin-session-display';
 
 export const metadata: Metadata = {
   title: 'Current Clients | Admin Portal | all9s Solutions',
@@ -21,9 +21,7 @@ export default async function PortalAdminCurrentClientsPage({
 }: PortalAdminCurrentClientsPageProps) {
   const { client: selectedConsultationId } = await searchParams;
   const [session, clients] = await Promise.all([getPortalSession(), getPortalAdminCurrentClients()]);
-  const displayName = session
-    ? await getPortalClientName(session.userId, session.email)
-    : 'Admin';
+  const displayName = session ? await getPortalAdminSignedInDisplayName() : 'Admin';
 
   const workspace =
     selectedConsultationId != null && selectedConsultationId.length > 0

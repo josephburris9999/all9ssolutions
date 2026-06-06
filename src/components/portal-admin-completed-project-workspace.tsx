@@ -3,15 +3,15 @@ import { PortalAdminProjectTimelineSection } from '@/components/portal-admin-pro
 import { PortalAgreementSection } from '@/components/portal-agreement-section';
 import { PortalContentUploadSection } from '@/components/portal-content-upload-section';
 import { PortalSupportSection } from '@/components/portal-support-section';
-import type { PortalAdminCurrentProjectWorkspace } from '@/lib/portal-admin-current-project-workspace';
+import type { PortalAdminCompletedProjectWorkspace } from '@/lib/portal-admin-completed-project-workspace';
 
-type PortalAdminCurrentProjectWorkspaceProps = {
-  workspace: PortalAdminCurrentProjectWorkspace;
+type PortalAdminCompletedProjectWorkspaceProps = {
+  workspace: PortalAdminCompletedProjectWorkspace;
 };
 
-export function PortalAdminCurrentProjectWorkspaceSections({
+export function PortalAdminCompletedProjectWorkspaceSections({
   workspace,
-}: PortalAdminCurrentProjectWorkspaceProps) {
+}: PortalAdminCompletedProjectWorkspaceProps) {
   const { dashboard, consultationRequestId, projectId, projectTitle, projectStatus } = workspace;
   const {
     clientName,
@@ -30,7 +30,8 @@ export function PortalAdminCurrentProjectWorkspaceSections({
       <section className="relative bg-secondary/30 px-[1.25rem] py-24">
         <div className="container mx-auto px-4">
           <p className="mb-8 text-sm text-muted-foreground">
-            Viewing <span className="font-medium text-foreground">{projectTitle}</span> for{' '}
+            Viewing completed project{' '}
+            <span className="font-medium text-foreground">{projectTitle}</span> for{' '}
             <span className="font-medium text-foreground">{clientName}</span>
           </p>
           <PortalAgreementSection
@@ -41,9 +42,8 @@ export function PortalAdminCurrentProjectWorkspaceSections({
             readOnly
             consultationRequestId={consultationRequestId}
             initialAccordionCollapsed
-            showAddAgreementButton
+            showReactivateProjectButton
             projectId={projectId}
-            showCompleteProjectButton
             projectStatus={projectStatus}
           />
         </div>
@@ -55,8 +55,9 @@ export function PortalAdminCurrentProjectWorkspaceSections({
             projects={projectTimelines}
             referenceNow={timelineReferenceNow}
             projectId={projectId}
-            description="View progress from the client's consultation date through the project's estimated completion date."
-            emptyMessage="The project timeline will appear here once a consultation is linked to this client's account."
+            showUpdateEstimatedCompletion={false}
+            description="Final progress from the client's consultation date through project completion."
+            emptyMessage="Timeline data is not available for this completed project."
           />
         </div>
       </section>
@@ -75,7 +76,7 @@ export function PortalAdminCurrentProjectWorkspaceSections({
             timeZone={clientTimezone}
             projectId={projectId}
             audience="admin"
-            enableAdminMessageListening
+            readOnly
           />
         </div>
       </section>
@@ -88,7 +89,7 @@ export function PortalAdminCurrentProjectWorkspaceSections({
             projectId={projectId}
             readOnly
             consultationRequestId={consultationRequestId}
-            showCompleteProjectButton
+            showReactivateProjectButton
             projectStatus={projectStatus}
           />
         </div>

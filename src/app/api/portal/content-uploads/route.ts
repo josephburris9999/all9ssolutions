@@ -4,7 +4,7 @@ import {
   areAllPortalAgreementsSignedForProject,
   PORTAL_PROJECT_AGREEMENTS_UNSIGNED_MESSAGE,
 } from '@/lib/portal-project-agreement-gate';
-import { portalUserOwnsProject } from '@/lib/portal-project-access';
+import { portalUserOwnsActiveProject } from '@/lib/portal-project-access';
 import { isPortalAdminRole } from '@/lib/portal-role-data';
 import {
   getPortalContentUploads,
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'Project is required' }, { status: 400 });
   }
 
-  if (!(await portalUserOwnsProject(session.userId, projectId))) {
+  if (!(await portalUserOwnsActiveProject(session.userId, projectId))) {
     return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
   }
 
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Project is required' }, { status: 400 });
   }
 
-  if (!(await portalUserOwnsProject(session.userId, resolvedProjectId))) {
+  if (!(await portalUserOwnsActiveProject(session.userId, resolvedProjectId))) {
     return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
   }
 

@@ -33,6 +33,7 @@ type PortalAdminShellProps = {
   children: React.ReactNode;
   clientCategoryCounts: PortalAdminClientCategoryCounts;
   initialUnreadMessages: PortalAdminUnreadMessagesState;
+  signedInDisplayName: string;
 };
 
 function PortalAdminShellNav({
@@ -68,6 +69,7 @@ export function PortalAdminShell({
   children,
   clientCategoryCounts,
   initialUnreadMessages,
+  signedInDisplayName,
 }: PortalAdminShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(false);
@@ -146,6 +148,15 @@ export function PortalAdminShell({
               onRequestExpand={handleRequestExpand}
             />
           </div>
+
+          {!collapsed ? (
+            <div className="shrink-0 border-t border-border px-3 py-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Signed in as{' '}
+                <span className="font-medium text-foreground">{signedInDisplayName}</span>
+              </p>
+            </div>
+          ) : null}
         </div>
       </aside>
 
@@ -178,6 +189,12 @@ export function PortalAdminShell({
               </div>
               <div className="overflow-y-auto px-3 py-3">
                 <PortalAdminShellNav onNavigate={() => setMobileNavOpen(false)} />
+              </div>
+              <div className="shrink-0 border-t border-border px-3 py-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Signed in as{' '}
+                  <span className="font-medium text-foreground">{signedInDisplayName}</span>
+                </p>
               </div>
             </SheetContent>
           </Sheet>

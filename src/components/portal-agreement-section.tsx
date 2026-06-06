@@ -12,6 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { PortalAdminAddProjectAgreementDialog } from '@/components/portal-admin-add-project-agreement-dialog';
+import { PortalAdminCompleteProjectButton } from '@/components/portal-admin-complete-project-button';
+import { PortalAdminReactivateProjectButton } from '@/components/portal-admin-reactivate-project-button';
 import { PortalAgreementBody } from '@/components/portal-agreement-body';
 import {
   buildPortalAgreementSignatureRenderContext,
@@ -45,6 +47,11 @@ type PortalAgreementSectionProps = {
   showAddAgreementButton?: boolean;
   /** Required when `showAddAgreementButton` is true. */
   projectId?: string | null;
+  /** Admin portal: show Complete Project at the top of the section. */
+  showCompleteProjectButton?: boolean;
+  /** Admin portal: show Make Current at the top of the section. */
+  showReactivateProjectButton?: boolean;
+  projectStatus?: string;
 };
 
 function formatAgreementClientParty(profile: PortalClientProfile): string {
@@ -322,6 +329,9 @@ export function PortalAgreementSection({
   initialAccordionCollapsed = false,
   showAddAgreementButton = false,
   projectId = null,
+  showCompleteProjectButton = false,
+  showReactivateProjectButton = false,
+  projectStatus,
 }: PortalAgreementSectionProps) {
   const [statusById, setStatusById] = useState<Record<string, PortalAgreementStatus>>(() =>
     Object.fromEntries(agreements.map((item) => [item.id, item.status]))
@@ -362,9 +372,23 @@ export function PortalAgreementSection({
 
   return (
     <section className="mt-12 max-w-3xl" aria-labelledby="portal-agreement-heading">
-      <h2 id="portal-agreement-heading" className="mb-4 text-2xl font-bold text-foreground">
-        Agreements
-      </h2>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <h2 id="portal-agreement-heading" className="text-2xl font-bold text-foreground">
+          Agreements
+        </h2>
+        {showCompleteProjectButton && projectId ? (
+          <PortalAdminCompleteProjectButton
+            projectId={projectId}
+            projectStatus={projectStatus}
+          />
+        ) : null}
+        {showReactivateProjectButton && projectId ? (
+          <PortalAdminReactivateProjectButton
+            projectId={projectId}
+            projectStatus={projectStatus}
+          />
+        ) : null}
+      </div>
       <p className="mb-6 text-muted-foreground">
         Agreements between all9s Solutions and {formatAgreementClientParty(clientProfile)}.
       </p>

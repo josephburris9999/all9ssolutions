@@ -8,15 +8,17 @@ type PortalAdminProjectTimelineSectionProps = {
   projectId: string;
   description?: string;
   emptyMessage?: string;
+  showUpdateEstimatedCompletion?: boolean;
 };
 
-/** Admin-only timeline section with update estimated completion controls. */
+/** Admin-only timeline section with optional update estimated completion controls. */
 export function PortalAdminProjectTimelineSection({
   projects,
   referenceNow,
   projectId,
   description,
   emptyMessage,
+  showUpdateEstimatedCompletion = true,
 }: PortalAdminProjectTimelineSectionProps) {
   return (
     <PortalProjectTimeline
@@ -25,7 +27,7 @@ export function PortalAdminProjectTimelineSection({
       description={description}
       emptyMessage={emptyMessage}
       actions={
-        projects.length > 0 ? (
+        showUpdateEstimatedCompletion && projects.length > 0 ? (
           <PortalAdminUpdateEstimatedCompletion
             key="update-estimated-completion"
             projectId={projectId}

@@ -5,7 +5,7 @@ import {
   loadPortalClientProjectsLandingView,
 } from '@/lib/portal-client-dashboard-data';
 import {
-  listSelectablePortalProjects,
+  listClientPortalProjects,
   resolvePortalClientProjectGate,
 } from '@/lib/portal-projects';
 
@@ -37,8 +37,9 @@ export async function PortalProjectDashboardLoader({
   allowCreatePortalAccount = false,
   mustChangePassword = false,
 }: PortalProjectDashboardLoaderProps) {
-  const projects = await listSelectablePortalProjects(portalUserId);
+  const projects = await listClientPortalProjects(portalUserId);
   const gate = resolvePortalClientProjectGate(projects, selectedProjectId);
+  const activeProjectIds = new Set(projects.map((project) => project.id));
 
   if (gate.kind === 'none') {
     return <PortalNoProjectsMessage />;
@@ -64,6 +65,7 @@ export async function PortalProjectDashboardLoader({
         showPasswordChangeButton
         mustChangePassword={mustChangePassword}
         linkedProjectsForRequests={linkedProjectsForRequests}
+        activeProjectIds={activeProjectIds}
         heroTitle={heroTitle}
         heroIdentityPrefix={heroIdentityPrefix}
       />
@@ -93,6 +95,7 @@ export async function PortalProjectDashboardLoader({
       showPasswordChangeButton
       mustChangePassword={mustChangePassword}
       linkedProjectsForRequests={linkedProjectsForRequests}
+      activeProjectIds={activeProjectIds}
       heroTitle={heroTitle}
       heroIdentityPrefix={heroIdentityPrefix}
     />

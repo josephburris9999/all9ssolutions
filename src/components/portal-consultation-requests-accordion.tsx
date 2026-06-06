@@ -32,6 +32,8 @@ type PortalConsultationRequestsAccordionProps = {
   projectDashboardBasePath?: string;
   /** Fallback when request rows omit projectId (e.g. from selectable project list). */
   linkedProjects?: PortalConsultationRequestLinkedProject[];
+  /** When set, Open Project links only appear for these project ids. */
+  activeProjectIds?: ReadonlySet<string>;
   /** When set (client portal), shows per-consultation agreement sign / download controls. */
   clientProfile?: PortalClientProfile;
   clientTimezone?: string | null;
@@ -41,21 +43,34 @@ type PortalConsultationRequestsAccordionProps = {
 
 function resolveRequestProject(
   request: PortalConsultationRequestDetail,
-  linkedProjects?: PortalConsultationRequestLinkedProject[]
+  linkedProjects?: PortalConsultationRequestLinkedProject[],
+  activeProjectIds?: ReadonlySet<string>
 ): { projectId: string; projectTitle: string | null } | null {
-  if (request.projectId) {
-    return { projectId: request.projectId, projectTitle: request.projectTitle };
-  }
+  const candidate =
+    request.projectId != null
+      ? { projectId: request.projectId, projectTitle: request.projectTitle }
+      : (() => {
+          const linked = linkedProjects?.find(
+            (project) => project.consultationRequestId === request.id
+          );
+          if (!linked) {
+            return null;
+          }
+          return {
+            projectId: linked.id,
+            projectTitle: linked.title.trim() || null,
+          };
+        })();
 
-  const linked = linkedProjects?.find((project) => project.consultationRequestId === request.id);
-  if (!linked) {
+  if (!candidate) {
     return null;
   }
 
-  return {
-    projectId: linked.id,
-    projectTitle: linked.title.trim() || null,
-  };
+  if (activeProjectIds && !activeProjectIds.has(candidate.projectId)) {
+    return null;
+  }
+
+  return candidate;
 }
 
 function formatPhoneDisplay(phone: string | null): string {
@@ -175,6 +190,7 @@ export function PortalConsultationRequestsAccordion({
   defaultOpenRequestId,
   projectDashboardBasePath,
   linkedProjects,
+  activeProjectIds,
   clientProfile,
   clientTimezone,
   startCollapsed = false,
@@ -210,7 +226,7 @@ export function PortalConsultationRequestsAccordion({
         const submittedLabel = clientProfile
           ? formatPortalAdminConsultationTableDate(request.createdAt)
           : formatPortalAdminConsultationDate(request.createdAt);
-        const linkedProject = resolveRequestProject(request, linkedProjects);
+        const linkedProject = resolveRequestProject(request, linkedProjects, activeProjectIds);
         const subtitleParts = [`Submitted ${submittedLabel}`];
         if (linkedProject?.projectTitle) {
           subtitleParts.push(linkedProject.projectTitle);

@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { PortalAdminConsultationRequestsPanel } from '@/components/portal-admin-consultation-requests-panel';
 import type { PortalAdminConsultationClientDetail } from '@/lib/portal-admin-client-display';
+import { getPortalAdminSignedInDisplayName } from '@/lib/portal-admin-session-display';
+
 type PortalAdminConsultationClientViewProps = {
   client: PortalAdminConsultationClientDetail;
 };
 
 export async function PortalAdminConsultationClientView({ client }: PortalAdminConsultationClientViewProps) {
+  const signedInDisplayName = await getPortalAdminSignedInDisplayName();
   const pendingCount = client.requests.filter((request) => !request.projectId).length;
 
   return (
@@ -27,6 +30,9 @@ export async function PortalAdminConsultationClientView({ client }: PortalAdminC
           <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             {client.name.trim() || 'Client'}
           </h1>
+          <p className="mb-4 text-lg text-muted-foreground">
+            Signed in as <span className="text-foreground">{signedInDisplayName}</span>
+          </p>
           {pendingCount > 0 ? (
             <p className="mb-8 text-lg text-muted-foreground">
               <span className="text-foreground">{pendingCount}</span> request
