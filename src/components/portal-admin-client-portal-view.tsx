@@ -48,8 +48,8 @@ export async function PortalAdminClientPortalView({
     return <PortalAdminConsultationClientView client={consultationClient} />;
   }
 
-  const primaryConsultationRequestId = consultationClient
-    ? consultationClient.primaryConsultationRequestId
+  const primaryConsultationRequestId = isConsultationClientDetail(client)
+    ? client.primaryConsultationRequestId
     : client.id;
 
   const dashboardContext = {
@@ -110,13 +110,19 @@ export async function PortalAdminClientPortalView({
     return <PortalNoProjectsMessage />;
   }
 
+  if (gate.kind !== 'ready') {
+    return <PortalNoProjectsMessage />;
+  }
+
+  const selectedProject = gate.project;
+
   const dashboard = await loadPortalDashboardView(
     {
       ...dashboardContext,
-      projectId: gate.project.id,
+      projectId: selectedProject.id,
     },
     {
-      selectedProject: gate.project,
+      selectedProject,
     }
   );
 
@@ -124,10 +130,10 @@ export async function PortalAdminClientPortalView({
     <PortalClientDashboard
       {...dashboard}
       {...dashboardExtras}
-      consultationRequestId={gate.project.consultationRequestId}
+      consultationRequestId={selectedProject.consultationRequestId}
       adminProjectWorkspace={{
-        projectId: gate.project.id,
-        projectStatus: gate.project.status,
+        projectId: selectedProject.id,
+        projectStatus: selectedProject.status,
       }}
       heroIdentityName={adminDisplayName}
     />

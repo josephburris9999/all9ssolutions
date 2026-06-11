@@ -21,6 +21,27 @@ const PROJECT_CREATION_NOTICE_HTML =
 const PROJECT_CREATION_NOTICE_TEXT =
   'We will create your project in the client portal within one business day. You will receive access to project updates, messaging, and document sharing once your project is ready.';
 
+export function buildAgreementSignedEmailSubject(agreementTitle: string): string {
+  const title = agreementTitle.trim() || PORTAL_AGREEMENT_TITLE;
+  return `Your signed ${title} — all9s Solutions`;
+}
+
+function buildPdfEmailAttachment(pdf: Buffer, filename: string) {
+  if (!pdf.length) {
+    throw new Error('Agreement PDF is empty');
+  }
+
+  const safeFilename = filename.trim().toLowerCase().endsWith('.pdf')
+    ? filename.trim()
+    : `${filename.trim() || 'agreement'}.pdf`;
+
+  return {
+    filename: safeFilename,
+    content: pdf.toString('base64'),
+    content_type: 'application/pdf',
+  };
+}
+
 export function buildClientAgreementSignedEmail(options: {
   name: string;
   signerName: string;
@@ -33,7 +54,7 @@ export function buildClientAgreementSignedEmail(options: {
   const signedAtLabel = options.signedAtLabel.trim();
   const agreementTitle = options.agreementTitle?.trim() || PORTAL_AGREEMENT_TITLE;
 
-  const subject = 'Your signed Client Service Agreement — all9s Solutions';
+  const subject = buildAgreementSignedEmailSubject(agreementTitle);
   const projectCreationNoticeHtml = options.includeProjectCreationNotice
     ? PROJECT_CREATION_NOTICE_HTML
     : '';
@@ -104,6 +125,7 @@ export async function sendClientAgreementSignedEmail(options: {
   });
 
   const pdfFilename = options.pdfFilename?.trim() || CLIENT_AGREEMENT_PDF_FILENAME;
+  const attachment = buildPdfEmailAttachment(options.pdf, pdfFilename);
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -118,12 +140,7 @@ export async function sendClientAgreementSignedEmail(options: {
       html,
       text,
       reply_to: process.env.CONSULTATION_REPLY_TO?.trim() || undefined,
-      attachments: [
-        {
-          filename: pdfFilename,
-          content: options.pdf.toString('base64'),
-        },
-      ],
+      attachments: [attachment],
     }),
   });
 

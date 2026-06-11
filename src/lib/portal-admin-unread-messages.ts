@@ -5,10 +5,9 @@ import {
   getPortalAdminCompletedClientsPageHref,
   getPortalAdminCurrentClientsPageHref,
 } from '@/lib/portal-admin-client-display';
+import { PORTAL_ACTIVE_PROJECT_STATUSES } from '@/lib/portal-project-statuses';
 import { prisma } from '@/lib/prisma';
 import { PORTAL_MESSAGES_SECTION_ID, PORTAL_SUPPORT_PROGRESS_TITLE } from '@/lib/portal-support-constants';
-
-const ACTIVE_PROJECT_STATUSES: ProjectStatus[] = ['PLANNED', 'ACTIVE', 'ON_HOLD'];
 
 export type PortalAdminUnreadMessageProject = {
   projectId: string;
@@ -33,7 +32,7 @@ export function buildPortalAdminMessagesSectionHref(options: {
     )}${hash}`;
   }
 
-  if (ACTIVE_PROJECT_STATUSES.includes(options.projectStatus)) {
+  if ((PORTAL_ACTIVE_PROJECT_STATUSES as readonly ProjectStatus[]).includes(options.projectStatus)) {
     return `${getPortalAdminCurrentClientsPageHref(
       options.consultationRequestId,
       options.projectId

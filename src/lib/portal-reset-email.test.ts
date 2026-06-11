@@ -18,11 +18,23 @@ describe('buildPortalTemporaryCredentialsEmail', () => {
     expect(text).toContain('choose your own password');
   });
 
-  it('uses reset copy by default', () => {
+  it('uses new-account copy by default', () => {
     const { html, text } = buildPortalTemporaryCredentialsEmail({
       name: 'Jane Doe',
       temporaryPassword: 'TempPass123!',
       portalUrl: 'https://all9ssolutions.com',
+    });
+
+    expect(html).toContain('account is ready');
+    expect(text).toContain('account is ready');
+  });
+
+  it('uses reset copy when variant is reset', () => {
+    const { html, text } = buildPortalTemporaryCredentialsEmail({
+      name: 'Jane Doe',
+      temporaryPassword: 'TempPass123!',
+      portalUrl: 'https://all9ssolutions.com',
+      variant: 'reset',
     });
 
     expect(html).toContain('has been reset');

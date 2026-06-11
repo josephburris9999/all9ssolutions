@@ -36,7 +36,7 @@ type PortalContentUploadSectionProps = {
 };
 
 const ACCEPTED_TYPES =
-  '.pdf,.doc,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg,.gif,.webp,.svg,.zip';
+  '.pdf,.doc,.docx,.txt,.text,.md,.rtf,.png,.jpg,.jpeg,.gif,.webp,.svg,.zip';
 
 export function PortalContentUploadSection({
   initialUploads,
@@ -126,7 +126,7 @@ export function PortalContentUploadSection({
         });
       });
     },
-    [runGuardedSubmit, toast]
+    [projectId, runGuardedSubmit, toast]
   );
 
   function handleFileSelection(fileList: FileList | null) {

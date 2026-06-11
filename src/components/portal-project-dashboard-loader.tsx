@@ -72,16 +72,21 @@ export async function PortalProjectDashboardLoader({
     );
   }
 
-  const activeConsultationId = consultationRequestId ?? gate.project.consultationRequestId;
+  if (gate.kind !== 'ready') {
+    return <PortalNoProjectsMessage />;
+  }
+
+  const selectedProject = gate.project;
+  const activeConsultationId = consultationRequestId ?? selectedProject.consultationRequestId;
 
   const dashboard = await loadPortalClientProjectDashboardView(
     {
       ...dashboardContext,
       portalUserId,
-      projectId: gate.project.id,
+      projectId: selectedProject.id,
     },
     {
-      selectedProject: gate.project,
+      selectedProject,
     }
   );
 

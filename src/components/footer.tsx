@@ -29,7 +29,7 @@ export function Footer() {
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Providing custom software development, web development, technology consulting, database solutions,
-              business automation, and digital transformatoin services focused on reliability, efficiency, and long-term
+              business automation, and digital transformation services focused on reliability, efficiency, and long-term
               growth.
             </p>
           </div>

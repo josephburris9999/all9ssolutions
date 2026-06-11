@@ -22,7 +22,9 @@ describe('getTimelineProgressPercent', () => {
   });
 
   it('returns 50 at midpoint', () => {
-    const mid = new Date('2026-04-01T00:00:00.000Z').getTime();
+    const startMs = new Date(start).getTime();
+    const endMs = new Date(end).getTime();
+    const mid = startMs + (endMs - startMs) / 2;
     expect(getTimelineProgressPercent(start, end, mid)).toBe(50);
   });
 

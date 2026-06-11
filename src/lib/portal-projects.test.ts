@@ -67,6 +67,15 @@ describe('portalProjectDashboardHref', () => {
 });
 
 describe('resolvePortalClientProjectGate', () => {
+  it('returns none when there are no active projects', () => {
+    expect(resolvePortalClientProjectGate([], null)).toEqual({ kind: 'none' });
+  });
+
+  it('returns landing when no project is selected', () => {
+    expect(resolvePortalClientProjectGate([project('a')], null)).toEqual({ kind: 'landing' });
+    expect(resolvePortalClientProjectGate([project('a')], '   ')).toEqual({ kind: 'landing' });
+  });
+
   it('returns landing when a completed project id is not in the active list', () => {
     expect(resolvePortalClientProjectGate([project('a')], 'completed-only')).toEqual({
       kind: 'landing',

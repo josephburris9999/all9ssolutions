@@ -16,6 +16,17 @@ DATABASE_URL=postgresql://user:password@hostname:5432/all9ssolutions?schema=publ
 
 Without this, the consultation API cannot save submissions.
 
+Also set Resend variables for consultation confirmation emails and bounce/delivery webhooks:
+
+```env
+RESEND_API_KEY=re_...
+CONSULTATION_CONFIRMATION_FROM="all9s Solutions <hello@all9ssolutions.com>"
+CONSULTATION_REPLY_TO=hello@all9ssolutions.com
+RESEND_WEBHOOK_SECRET=whsec_...
+```
+
+Register the webhook URL `https://your-domain.com/api/webhooks/resend` in the Resend dashboard with events `email.bounced` and `email.delivered`. The signing secret must match `RESEND_WEBHOOK_SECRET`. See `docs/bot-protection.md` for details.
+
 ## Migrations
 
 Apply schema to production once (from your machine or a one-off Render shell). With Supabase, set **`DIRECT_URL`** in `.env` (see `docs/prisma.md`); `prisma.config.ts` uses it for the CLI:

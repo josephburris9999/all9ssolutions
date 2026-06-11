@@ -11,6 +11,7 @@ import { isPortalAdminRole, PORTAL_ROLE_ADMIN } from '@/lib/portal-role-data';
 import type { PortalAdminClientCategoryCounts } from '@/lib/portal-admin-nav';
 import { normalizePortalEmail } from '@/lib/portal-user';
 import { CONSULTATION_EMAIL_DELIVERY_STATUS } from '@/lib/consultation-email-delivery';
+import { PORTAL_ACTIVE_PROJECT_STATUSES } from '@/lib/portal-project-statuses';
 
 export type {
   PortalAdminConsultationClientDetail,
@@ -28,7 +29,7 @@ export {
 } from '@/lib/portal-admin-client-display';
 
 /** Matches active project statuses used elsewhere in the portal (timeline, amount due). */
-export const PORTAL_ADMIN_ACTIVE_PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'ON_HOLD'] as const;
+export { PORTAL_ACTIVE_PROJECT_STATUSES as PORTAL_ADMIN_ACTIVE_PROJECT_STATUSES } from '@/lib/portal-project-statuses';
 
 export const PORTAL_ADMIN_COMPLETED_PROJECT_STATUSES = ['COMPLETED'] as const;
 
@@ -196,7 +197,7 @@ type PortalAdminConsultationFilterContext = {
 };
 
 async function loadPortalAdminConsultationFilterContext(): Promise<PortalAdminConsultationFilterContext> {
-  const activeStatuses = [...PORTAL_ADMIN_ACTIVE_PROJECT_STATUSES];
+  const activeStatuses = [...PORTAL_ACTIVE_PROJECT_STATUSES];
 
   const [portalUsersWithActiveProjects, adminPortalUsers] = await Promise.all([
     prisma.project.findMany({
@@ -365,7 +366,7 @@ async function loadConsultationRequestRows() {
 }
 
 async function loadConsultationClientCandidates() {
-  const activeStatuses = [...PORTAL_ADMIN_ACTIVE_PROJECT_STATUSES];
+  const activeStatuses = [...PORTAL_ACTIVE_PROJECT_STATUSES];
   const context = await loadPortalAdminConsultationFilterContext();
 
   const rows = await prisma.consultationRequest.findMany({

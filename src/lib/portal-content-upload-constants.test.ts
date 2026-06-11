@@ -31,6 +31,25 @@ describe('portal-content-upload-constants', () => {
     expect(resolvePortalUploadMimeType('script.exe', 'application/octet-stream')).toBeNull();
   });
 
+  it('accepts allowed extensions even when the browser reports a mismatched mime type', () => {
+    expect(resolvePortalUploadMimeType('notes.txt', 'text/html')).toBe('text/plain');
+    expect(resolvePortalUploadMimeType('notes.txt', 'application/msword')).toBe('text/plain');
+    expect(resolvePortalUploadMimeType('brief.pdf', 'application/msword')).toBe('application/pdf');
+  });
+
+  it('preserves the extension when truncating long file names', () => {
+    const longName = `${'a'.repeat(PORTAL_UPLOAD_FILE_NAME_MAX_LENGTH + 50)}.txt`;
+    const sanitized = sanitizePortalUploadFileName(longName);
+    expect(sanitized).toHaveLength(PORTAL_UPLOAD_FILE_NAME_MAX_LENGTH);
+    expect(sanitized.endsWith('.txt')).toBe(true);
+    expect(isPortalUploadExtensionAllowed(sanitized)).toBe(true);
+  });
+
+  it('allows the .text plain-text extension', () => {
+    expect(isPortalUploadExtensionAllowed('notes.text')).toBe(true);
+    expect(resolvePortalUploadMimeType('notes.text', 'text/plain')).toBe('text/plain');
+  });
+
   it('formats upload sizes', () => {
     expect(formatPortalUploadSize(512)).toBe('512 B');
     expect(getPortalUploadExtension('file.PDF')).toBe('.pdf');

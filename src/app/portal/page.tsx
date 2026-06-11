@@ -79,7 +79,7 @@ export default async function PortalPage() {
       </section>
 
       <Suspense fallback={null}>
-        <PortalLoginForm requirePasswordChange={session?.mustChangePassword ?? false} />
+        <PortalLoginForm requirePasswordChange={false} />
       </Suspense>
 
       <section className="relative overflow-hidden bg-secondary/30 px-[1.25rem] py-24">

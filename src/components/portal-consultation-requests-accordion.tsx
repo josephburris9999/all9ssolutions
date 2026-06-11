@@ -18,6 +18,9 @@ import type {
   PortalConsultationRequestDetail,
   PortalConsultationRequestLinkedProject,
 } from '@/lib/portal-consultation-requests-data';
+import {
+  resolveConsultationRequestProject,
+} from '@/lib/portal-consultation-request-project';
 import { portalProjectDashboardHref } from '@/lib/portal-role-data';
 import { formatPhoneNumber } from '@/lib/phone';
 import { cn } from '@/lib/utils';
@@ -40,38 +43,6 @@ type PortalConsultationRequestsAccordionProps = {
   /** When true, all panels start collapsed (client Your projects section). */
   startCollapsed?: boolean;
 };
-
-function resolveRequestProject(
-  request: PortalConsultationRequestDetail,
-  linkedProjects?: PortalConsultationRequestLinkedProject[],
-  activeProjectIds?: ReadonlySet<string>
-): { projectId: string; projectTitle: string | null } | null {
-  const candidate =
-    request.projectId != null
-      ? { projectId: request.projectId, projectTitle: request.projectTitle }
-      : (() => {
-          const linked = linkedProjects?.find(
-            (project) => project.consultationRequestId === request.id
-          );
-          if (!linked) {
-            return null;
-          }
-          return {
-            projectId: linked.id,
-            projectTitle: linked.title.trim() || null,
-          };
-        })();
-
-  if (!candidate) {
-    return null;
-  }
-
-  if (activeProjectIds && !activeProjectIds.has(candidate.projectId)) {
-    return null;
-  }
-
-  return candidate;
-}
 
 function formatPhoneDisplay(phone: string | null): string {
   if (!phone) {
@@ -226,7 +197,11 @@ export function PortalConsultationRequestsAccordion({
         const submittedLabel = clientProfile
           ? formatPortalAdminConsultationTableDate(request.createdAt)
           : formatPortalAdminConsultationDate(request.createdAt);
-        const linkedProject = resolveRequestProject(request, linkedProjects, activeProjectIds);
+        const linkedProject = resolveConsultationRequestProject(
+          request,
+          linkedProjects,
+          activeProjectIds
+        );
         const subtitleParts = [`Submitted ${submittedLabel}`];
         if (linkedProject?.projectTitle) {
           subtitleParts.push(linkedProject.projectTitle);

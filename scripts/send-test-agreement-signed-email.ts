@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildClientAgreementSignedEmail,
   CLIENT_AGREEMENT_PDF_FILENAME,
+  sendClientAgreementSignedEmail,
 } from '../src/lib/portal-agreement-signed-email';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -67,43 +68,30 @@ async function main() {
     pdf = Buffer.from('%PDF-1.4\n% Test agreement attachment\n');
   }
 
-  const { subject, html, text } = buildClientAgreementSignedEmail({
+  const { subject } = buildClientAgreementSignedEmail({
     name,
     signerName,
     signedAtLabel,
     includeProjectCreationNotice,
   });
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject: `[TEST] ${subject}`,
-      html,
-      text,
-      reply_to: process.env.CONSULTATION_REPLY_TO?.trim() || undefined,
-      attachments: [
-        {
-          filename: CLIENT_AGREEMENT_PDF_FILENAME,
-          content: pdf.toString('base64'),
-        },
-      ],
-    }),
+  const result = await sendClientAgreementSignedEmail({
+    to,
+    name,
+    signerName,
+    signedAtLabel,
+    includeProjectCreationNotice,
+    pdfFilename: CLIENT_AGREEMENT_PDF_FILENAME,
+    pdf,
   });
 
-  const body = (await res.json()) as { message?: string; id?: string };
-
-  if (!res.ok) {
-    console.error('Resend error:', body.message ?? res.status);
+  if (!result.ok) {
+    console.error('Resend error:', result.error);
     process.exit(1);
   }
 
-  console.log(`Sent test agreement signed email to ${to} (id: ${body.id ?? 'unknown'})`);
+  console.log(`Sent test agreement signed email to ${to}`);
+  console.log(`Subject: ${subject}`);
   console.log(
     `includeProjectCreationNotice=${includeProjectCreationNotice ? 'true' : 'false'}`
   );

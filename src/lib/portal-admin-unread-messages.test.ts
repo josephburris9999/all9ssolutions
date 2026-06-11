@@ -21,4 +21,14 @@ describe('buildPortalAdminMessagesSectionHref', () => {
       })
     ).toBe('/portal/admin/clients/completed?client=consult-2&project=project-2#portal-messages');
   });
+
+  it('falls back to completed workspace for non-active statuses', () => {
+    expect(
+      buildPortalAdminMessagesSectionHref({
+        consultationRequestId: 'consult-3',
+        projectId: 'project-3',
+        projectStatus: 'CANCELLED',
+      })
+    ).toBe('/portal/admin/clients/completed?client=consult-3&project=project-3#portal-messages');
+  });
 });

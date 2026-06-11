@@ -3,8 +3,10 @@ import { getPortalSession } from '@/lib/portal-auth';
 import {
   buildPortalAgreementStatus,
   formatPortalSignedAt,
+  PORTAL_AGREEMENT_TITLE,
   PORTAL_AGREEMENT_VERSION,
 } from '@/lib/portal-agreement';
+import { agreementPdfDownloadFilename } from '@/lib/portal-agreement-filename';
 import { buildPortalAgreementPdfForClient } from '@/lib/portal-agreement-document';
 import { portalAgreementSignSchema } from '@/lib/portal-agreement-schema';
 import { sendClientAgreementSignedEmail } from '@/lib/portal-agreement-signed-email';
@@ -125,7 +127,9 @@ export async function POST(request: Request, context: RouteContext) {
       name: clientProfile.name,
       signerName: agreement.signerName,
       signedAtLabel,
+      agreementTitle: PORTAL_AGREEMENT_TITLE,
       includeProjectCreationNotice: true,
+      pdfFilename: agreementPdfDownloadFilename(PORTAL_AGREEMENT_TITLE),
       pdf,
     });
 

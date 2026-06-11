@@ -31,7 +31,25 @@ CONSULTATION_REPLY_TO="hello@all9ssolutions.com"
 
 `CONSULTATION_CONFIRMATION_FROM` must use a domain verified in Resend. The email states that all9s Solutions will contact them within one business day. Submitters are **not** redirected to the Client Portal sign-in page.
 
-### 3. Email via PHP (optional, internal notification)
+### 3. Resend webhooks (delivery and bounce tracking)
+
+Register a webhook in the [Resend dashboard](https://resend.com/webhooks) pointing at:
+
+```
+https://your-domain.com/api/webhooks/resend
+```
+
+Subscribe to **`email.bounced`** and **`email.delivered`**. Copy the signing secret into `.env` (and production hosting env vars):
+
+```env
+RESEND_WEBHOOK_SECRET="whsec_..."
+```
+
+Without this secret, the endpoint returns HTTP 500 and Resend will eventually disable the webhook after repeated failures. When a consultation confirmation bounces, the admin portal shows an **Email bounced** badge on that request.
+
+For local testing, use a tunnel (e.g. ngrok) to expose `http://localhost:9002/api/webhooks/resend`.
+
+### 4. Email via PHP (optional, internal notification)
 
 Set in `.env`:
 

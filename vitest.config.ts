@@ -6,10 +6,12 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     globals: false,
+    setupFiles: ['./vitest.setup.ts'],
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'server-only': path.resolve(__dirname, './src/test/mocks/server-only.ts'),
     },
   },
 });
