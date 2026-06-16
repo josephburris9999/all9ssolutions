@@ -5,14 +5,53 @@ import { Footer } from '@/components/footer';
 import { Toaster } from '@/components/ui/toaster';
 import Script from 'next/script';
 
+const siteUrl = 'https://all9ssolutions.com';
+const logoPath = '/images/all9s-logo.png';
+const logoUrl = `${siteUrl}${logoPath}`;
+const siteTitle = 'all9s Solutions LLC | Software Development & Technology Consulting';
+const siteDescription =
+  'Custom software development, web applications, database solutions, and technology consulting services.';
+
 export const metadata: Metadata = {
-  title: 'all9s Solutions | Enterprise Excellence',
-  description: 'Providing world-class enterprise solutions with 99.9999999% reliability and sophistication.',
+  metadataBase: new URL(siteUrl),
+  title: siteTitle,
+  description: siteDescription,
   icons: {
-    icon: '/icon.png',
-    shortcut: '/icon.png',
-    apple: '/icon.png',
+    icon: [
+      {
+        url: logoPath,
+        type: 'image/png',
+      },
+    ],
+    shortcut: logoPath,
+    apple: logoPath,
   },
+  openGraph: {
+    title: siteTitle,
+    description: siteDescription,
+    images: [
+      {
+        url: logoUrl,
+      },
+    ],
+    url: siteUrl,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [logoUrl],
+  },
+  other: {
+    'msapplication-TileImage': logoPath,
+  },
+};
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'all9s Solutions LLC',
+  url: siteUrl,
+  logo: logoUrl,
 };
 
 export default function RootLayout({
@@ -27,6 +66,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <Script
+          id="organization-json-ld"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
         {gaMeasurementId ? (
           <>
             <Script
