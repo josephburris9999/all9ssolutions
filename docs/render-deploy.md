@@ -27,6 +27,17 @@ RESEND_WEBHOOK_SECRET=whsec_...
 
 Register the webhook URL `https://your-domain.com/api/webhooks/resend` in the Resend dashboard with events `email.bounced` and `email.delivered`. The signing secret must match `RESEND_WEBHOOK_SECRET`. See `docs/bot-protection.md` for details.
 
+Set Stripe variables for client portal payments:
+
+```env
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_CHECKOUT_CURRENCY=usd
+PORTAL_APP_URL=https://all9ssolutions.com
+```
+
+Register the webhook URL `https://your-domain.com/api/webhooks/stripe` in the Stripe dashboard with the event `checkout.session.completed`. The signing secret must match `STRIPE_WEBHOOK_SECRET`.
+
 ## Migrations
 
 Apply schema to production once (from your machine or a one-off Render shell). With Supabase, set **`DIRECT_URL`** in `.env` (see `docs/prisma.md`); `prisma.config.ts` uses it for the CLI:

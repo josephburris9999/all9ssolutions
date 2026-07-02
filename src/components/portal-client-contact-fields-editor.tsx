@@ -268,8 +268,8 @@ export function PortalClientContactFieldsProvider({
       }
 
       setSavedValue(responsePayload.preferredContact);
-      setSavedPhone(normalizePhone(responsePayload.phone));
-      setSavedTimezone(normalizeTimezone(responsePayload.timezone));
+      setSavedPhone(normalizePhone(responsePayload.phone ?? null));
+      setSavedTimezone(normalizeTimezone(responsePayload.timezone ?? null));
       setOpen(false);
       setModalSource('preferred');
       router.refresh();

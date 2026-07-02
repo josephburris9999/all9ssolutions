@@ -34,23 +34,23 @@ export function buildPortalAgreementSignatureRenderContext(options: {
   signedAt?: string | null;
   signedAtLabel?: string | null;
 }): PortalAgreementRenderContext {
-  const signed =
+  const signature =
     options.signed &&
     options.signerName &&
     options.signedAt &&
-    options.signedAtLabel;
-
-  return {
-    client: options.clientProfile,
-    timeZone: options.timeZone,
-    clientAccepted: options.clientAccepted,
-    signature: signed
+    options.signedAtLabel
       ? {
           signerName: options.signerName,
           signedAt: options.signedAt,
           signedAtLabel: options.signedAtLabel,
         }
-      : undefined,
+      : undefined;
+
+  return {
+    client: options.clientProfile,
+    timeZone: options.timeZone,
+    clientAccepted: options.clientAccepted,
+    signature,
   };
 }
 

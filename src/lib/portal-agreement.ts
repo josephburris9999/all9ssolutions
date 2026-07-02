@@ -328,7 +328,14 @@ The Company shall not be liable for delays caused by third-party providers, inte
       body: 'Electronic signatures and digital approvals shall be considered legally binding where permitted by law.',
     },
     buildAcceptanceAndSignaturesSection({
-      client: { name: '—', email: '—', company: null, phone: null },
+      client: {
+        name: '—',
+        email: '—',
+        company: null,
+        phone: null,
+        timezone: null,
+        preferredContact: null,
+      },
     }),
   ];
 }

@@ -63,6 +63,7 @@ model PortalUser {
   updatedAt                DateTime              @updatedAt
   consultationRequests ConsultationRequest[]
   projects             Project[]
+  payments             PortalPayment[]
 }
 
 /// Files uploaded by clients through the portal (blob storage in Supabase).
@@ -134,10 +135,34 @@ model Project {
   agreements            ProjectAgreement[]
   contentUploads        PortalContentUpload[]
   progressRecords       Progress[]
+  payments              PortalPayment[]
 
   @@index([portalUserId])
   @@index([portalUserId, status])
   @@index([estimatedCompletionAt])
+}
+
+/// Stripe Checkout payments initiated from the client portal.
+model PortalPayment {
+  id                      String              @id @db.VarChar(36)
+  projectId               String              @db.VarChar(30)
+  portalUserId            String              @db.VarChar(30)
+  stripeCheckoutSessionId String?             @unique @db.VarChar(255)
+  stripePaymentIntentId   String?             @db.VarChar(255)
+  stripeEventId           String?             @unique @db.VarChar(255)
+  amountCents             Int
+  currency                String              @default("usd") @db.VarChar(3)
+  status                  PortalPaymentStatus @default(PENDING)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  completedAt             DateTime?           @db.Timestamptz(3)
+  project                 Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  portalUser              PortalUser          @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([portalUserId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 /// Client engagement tracked in the portal (many per Project).
@@ -182,6 +207,12 @@ enum ProjectStatus {
 enum ProjectAgreementStatus {
   PENDING
   SIGNED
+}
+
+enum PortalPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
 
 enum ProgressStatus {

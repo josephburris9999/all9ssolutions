@@ -7,6 +7,15 @@ const globalForPrisma = globalThis as unknown as {
   pgPool: Pool | undefined;
 };
 
+const BUILD_DATABASE_URL = 'postgresql://build:build@127.0.0.1:5432/build?schema=public';
+
+function getDatabaseUrl(): string {
+  const connectionString = process.env.DATABASE_URL;
+  if (connectionString) return connectionString;
+  if (process.env.NEXT_PHASE === 'phase-production-build') return BUILD_DATABASE_URL;
+  throw new Error('DATABASE_URL is not set');
+}
+
 function pgSslRejectUnauthorized(): boolean {
   if (process.env.PG_SSL_REJECT_UNAUTHORIZED === 'true') return true;
   if (process.env.PG_SSL_REJECT_UNAUTHORIZED === 'false') return false;
@@ -22,10 +31,7 @@ function usesRemoteSsl(connectionString: string): boolean {
 }
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is not set');
-  }
+  const connectionString = getDatabaseUrl();
 
   const pool =
     globalForPrisma.pgPool ??

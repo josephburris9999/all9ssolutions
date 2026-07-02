@@ -1,16 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { PaymentMethodIcons } from '@/components/payment-method-icons';
+import { useToast } from '@/hooks/use-toast';
 import {
   calculateClientLedgerTotalDue,
   formatCurrencyAmount,
@@ -26,6 +21,8 @@ type PortalAmountDueSectionProps = {
   ledgerLayout?: boolean;
   /** Client portal: payment actions disabled until all project agreements are signed. Omit for admin views. */
   allAgreementsSigned?: boolean;
+  /** Client portal: selected project to pay through Stripe Checkout. */
+  projectId?: string | null;
 };
 
 function AmountCard({ label, value }: { label: string; value: number }) {
@@ -143,9 +140,61 @@ export function PortalAmountDueSection({
   showPaymentActions = true,
   ledgerLayout = false,
   allAgreementsSigned,
+  projectId,
 }: PortalAmountDueSectionProps) {
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const paymentsEnabled = allAgreementsSigned !== false;
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const totalDue = ledgerLayout
+    ? calculateClientLedgerTotalDue(amounts)
+    : amounts.amountDue;
+  const paymentsEnabled = allAgreementsSigned !== false && Boolean(projectId) && totalDue > 0;
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast({
+        title: 'Payment submitted',
+        description: 'Stripe is confirming the payment. Your balance will update shortly.',
+      });
+    }
+    if (paymentStatus === 'canceled') {
+      toast({
+        title: 'Payment canceled',
+        description: 'No payment was completed.',
+      });
+    }
+  }, [searchParams, toast]);
+
+  async function startStripeCheckout() {
+    if (!paymentsEnabled || !projectId) return;
+
+    setIsCheckingOut(true);
+    try {
+      const response = await fetch('/api/portal/payments/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || 'Unable to start Stripe Checkout.');
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setIsCheckingOut(false);
+      toast({
+        title: 'Payment unavailable',
+        description: error instanceof Error ? error.message : 'Unable to start Stripe Checkout.',
+        variant: 'destructive',
+      });
+    }
+  }
 
   return (
     <section className="mt-12 max-w-3xl" aria-labelledby="portal-amount-due-heading">
@@ -177,30 +226,14 @@ export function PortalAmountDueSection({
             <Button
               type="button"
               className="w-full shrink-0 sm:w-auto"
-              disabled={!paymentsEnabled}
-              onClick={() => paymentsEnabled && setPaymentModalOpen(true)}
+              disabled={!paymentsEnabled || isCheckingOut}
+              onClick={startStripeCheckout}
             >
               <CreditCard className="size-4" aria-hidden />
-              Make a Payment
+              {isCheckingOut ? 'Opening checkout...' : 'Make a Payment'}
             </Button>
           </div>
         ) : null}
-
-        <Dialog
-          open={paymentsEnabled && paymentModalOpen}
-          onOpenChange={(open) => paymentsEnabled && setPaymentModalOpen(open)}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Coming soon</DialogTitle>
-            </DialogHeader>
-            <DialogFooter>
-              <Button type="button" onClick={() => setPaymentModalOpen(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </section>
   );

@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 test-run-output.txt
+.tools/
 
 # debug
 npm-debug.log*

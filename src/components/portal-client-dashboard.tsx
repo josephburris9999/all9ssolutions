@@ -170,6 +170,7 @@ export function PortalClientDashboard({
                 showPaymentActions
                 ledgerLayout
                 allAgreementsSigned={allAgreementsSigned}
+                projectId={workspaceProjectId}
               />
             </div>
           </section>
@@ -237,6 +238,7 @@ export function PortalClientDashboard({
                     showPaymentActions={!consultationRequestId}
                     ledgerLayout
                     allAgreementsSigned={allAgreementsSigned}
+                    projectId={selectedProject?.id}
                   />
                 </div>
               </section>
