@@ -5,6 +5,7 @@ import { PortalProjectTimeline } from '@/components/portal-project-timeline';
 import { PortalContentUploadSection } from '@/components/portal-content-upload-section';
 import { PortalSupportSection } from '@/components/portal-support-section';
 import { PortalClientConsultationRequestsSection } from '@/components/portal-client-consultation-requests-section';
+import { PortalPaymentReturnToast } from '@/components/portal-payment-return-toast';
 import type {
   PortalConsultationRequestDetail,
   PortalConsultationRequestLinkedProject,
@@ -88,6 +89,7 @@ export function PortalClientDashboard({
   const identityName = heroIdentityName ?? (isAdminPortalView ? 'Admin' : clientName);
   return (
     <>
+      <PortalPaymentReturnToast />
       <section className="relative overflow-hidden bg-background px-[1.25rem] pb-16 pt-28 md:pb-20 md:pt-32">
         <div className="iso-neon-grid-layer" aria-hidden>
           <div className="iso-neon-grid-layer-drift" />

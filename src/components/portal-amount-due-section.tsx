@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import { CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PaymentMethodIcons } from '@/components/payment-method-icons';
@@ -144,41 +143,10 @@ export function PortalAmountDueSection({
 }: PortalAmountDueSectionProps) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { toast } = useToast();
-  const searchParams = useSearchParams();
   const totalDue = ledgerLayout
     ? calculateClientLedgerTotalDue(amounts)
     : amounts.amountDue;
   const paymentsEnabled = allAgreementsSigned !== false && Boolean(projectId) && totalDue > 0;
-
-  useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    const paymentId = searchParams.get('paymentId')?.trim();
-    if (paymentStatus === 'success') {
-      toast({
-        title: 'Payment successful',
-        description: 'Your payment was received. Your balance will update shortly.',
-      });
-    }
-    if (paymentStatus === 'failed') {
-      toast({
-        title: 'Payment failed',
-        description: 'Your payment was not completed. No funds were collected.',
-        variant: 'destructive',
-      });
-
-      if (paymentId && typeof window !== 'undefined') {
-        const notificationKey = `stripe-payment-return:${paymentId}:failed`;
-        if (!window.sessionStorage.getItem(notificationKey)) {
-          window.sessionStorage.setItem(notificationKey, 'true');
-          void fetch('/api/portal/payments/stripe-return', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId, status: 'failed' }),
-          });
-        }
-      }
-    }
-  }, [searchParams, toast]);
 
   async function startStripeCheckout() {
     if (!paymentsEnabled || !projectId) return;
