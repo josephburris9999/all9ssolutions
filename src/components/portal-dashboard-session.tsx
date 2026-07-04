@@ -13,21 +13,10 @@ function isPortalSignedInPath(pathname: string): boolean {
   return PORTAL_SIGNED_IN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-/**
- * Clears the portal session cookie when the user leaves a signed-in portal page
- * (client dashboard or admin portal).
- */
+/** Clears the portal session cookie when the user navigates to a public app route. */
 export function PortalDashboardSession() {
   React.useEffect(() => {
-    const handlePageHide = () => {
-      endPortalSession();
-    };
-
-    window.addEventListener('pagehide', handlePageHide);
-
     return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-
       if (isPortalSignedInPath(window.location.pathname)) {
         return;
       }

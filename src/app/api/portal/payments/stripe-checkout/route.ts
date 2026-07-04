@@ -21,9 +21,15 @@ function getCheckoutOrigin(request: NextRequest): string {
   return process.env.PORTAL_APP_URL?.trim() || request.nextUrl.origin;
 }
 
-function buildCheckoutReturnUrl(request: NextRequest, projectId: string, status: 'success' | 'canceled') {
+function buildCheckoutReturnUrl(
+  request: NextRequest,
+  projectId: string,
+  paymentId: string,
+  status: 'success' | 'failed'
+) {
   const url = new URL(portalProjectDashboardHref('/portal/dashboard', projectId), getCheckoutOrigin(request));
   url.searchParams.set('payment', status);
+  url.searchParams.set('paymentId', paymentId);
   return url.toString();
 }
 
@@ -120,8 +126,8 @@ export async function POST(request: NextRequest) {
       paymentId,
       portalUserId: session.userId,
       projectId,
-      successUrl: buildCheckoutReturnUrl(request, projectId, 'success'),
-      cancelUrl: buildCheckoutReturnUrl(request, projectId, 'canceled'),
+      successUrl: buildCheckoutReturnUrl(request, projectId, paymentId, 'success'),
+      cancelUrl: buildCheckoutReturnUrl(request, projectId, paymentId, 'failed'),
     });
   } catch (error) {
     await markPaymentFailed(paymentId);

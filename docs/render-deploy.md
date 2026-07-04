@@ -33,10 +33,11 @@ Set Stripe variables for client portal payments:
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_CHECKOUT_CURRENCY=usd
+PAYMENT_ADMIN_EMAIL=hello@all9ssolutions.com
 PORTAL_APP_URL=https://all9ssolutions.com
 ```
 
-Register the webhook URL `https://your-domain.com/api/webhooks/stripe` in the Stripe dashboard with the event `checkout.session.completed`. The signing secret must match `STRIPE_WEBHOOK_SECRET`.
+Register the webhook URL `https://your-domain.com/api/webhooks/stripe` in the Stripe dashboard with the events `checkout.session.completed` and `checkout.session.expired`. The signing secret must match `STRIPE_WEBHOOK_SECRET`. Successful payments return the client to their project dashboard and are confirmed by the webhook; canceled / unsuccessful checkouts return to the project dashboard with a failed-payment notice. Abandoned Checkout sessions are marked failed when Stripe sends `checkout.session.expired`.
 
 ## Migrations
 

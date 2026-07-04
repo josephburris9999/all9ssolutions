@@ -152,17 +152,31 @@ export function PortalAmountDueSection({
 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
+    const paymentId = searchParams.get('paymentId')?.trim();
     if (paymentStatus === 'success') {
       toast({
-        title: 'Payment submitted',
-        description: 'Stripe is confirming the payment. Your balance will update shortly.',
+        title: 'Payment successful',
+        description: 'Your payment was received. Your balance will update shortly.',
       });
     }
-    if (paymentStatus === 'canceled') {
+    if (paymentStatus === 'failed') {
       toast({
-        title: 'Payment canceled',
-        description: 'No payment was completed.',
+        title: 'Payment failed',
+        description: 'Your payment was not completed. No funds were collected.',
+        variant: 'destructive',
       });
+
+      if (paymentId && typeof window !== 'undefined') {
+        const notificationKey = `stripe-payment-return:${paymentId}:failed`;
+        if (!window.sessionStorage.getItem(notificationKey)) {
+          window.sessionStorage.setItem(notificationKey, 'true');
+          void fetch('/api/portal/payments/stripe-return', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, status: 'failed' }),
+          });
+        }
+      }
     }
   }, [searchParams, toast]);
 
