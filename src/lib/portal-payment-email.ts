@@ -44,6 +44,34 @@ function getPaymentAdminEmail(): string {
   );
 }
 
+async function getPaymentAdminEmails(): Promise<string[]> {
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const adminRequests = await prisma.consultationRequest.findMany({
+      where: {
+        portalUser: {
+          role: 'a',
+        },
+        email: {
+          not: '',
+        },
+      },
+      select: {
+        email: true,
+      },
+    });
+
+    const emails = adminRequests
+      .map(({ email }) => email.trim().toLowerCase())
+      .filter(Boolean);
+
+    return Array.from(new Set(emails));
+  } catch (error) {
+    console.error('Failed to resolve payment admin emails:', error);
+    return [];
+  }
+}
+
 function buildPaymentEmail(input: SendPaymentEmailInput) {
   const amount = formatPaymentAmount(input.amountCents, input.currency);
   const projectTitle = input.projectTitle.trim() || 'Client project';
@@ -161,15 +189,20 @@ async function sendPaymentEmail(input: SendPaymentEmailInput) {
 }
 
 export async function sendPortalPaymentEmails(details: PortalPaymentEmailDetails): Promise<void> {
-  const [clientResult, adminResult] = await Promise.all([
+  const adminEmails = await getPaymentAdminEmails();
+  const adminRecipients = adminEmails.length > 0 ? adminEmails : [getPaymentAdminEmail()];
+
+  const [clientResult, ...adminResults] = await Promise.all([
     sendPaymentEmail({ ...details, to: details.clientEmail, audience: 'client' }),
-    sendPaymentEmail({ ...details, to: getPaymentAdminEmail(), audience: 'admin' }),
+    ...adminRecipients.map((to) => sendPaymentEmail({ ...details, to, audience: 'admin' })),
   ]);
 
   if (!clientResult.ok && !clientResult.skipped) {
     console.error('Failed to send client payment email:', clientResult.error);
   }
-  if (!adminResult.ok && !adminResult.skipped) {
-    console.error('Failed to send admin payment email:', adminResult.error);
+  for (const adminResult of adminResults) {
+    if (!adminResult.ok && !adminResult.skipped) {
+      console.error('Failed to send admin payment email:', adminResult.error);
+    }
   }
 }
