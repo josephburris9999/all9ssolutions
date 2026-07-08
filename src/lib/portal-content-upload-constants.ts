@@ -2,8 +2,8 @@ import { PORTAL_UPLOAD_FILE_NAME_MAX_LENGTH } from '@/lib/field-lengths';
 
 export { PORTAL_UPLOAD_FILE_NAME_MAX_LENGTH } from '@/lib/field-lengths';
 
-export const PORTAL_UPLOAD_MAX_BYTES = 25 * 1024 * 1024;
-export const PORTAL_UPLOAD_MAX_FILES_PER_REQUEST = 10;
+export const PORTAL_UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
+export const PORTAL_UPLOAD_MAX_FILES_PER_REQUEST = 4;
 
 const ALLOWED_EXTENSIONS = new Set([
   '.pdf',

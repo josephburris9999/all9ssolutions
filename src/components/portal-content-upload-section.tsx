@@ -58,6 +58,10 @@ export function PortalContentUploadSection({
 
   const displayTimeZone = timeZone ?? undefined;
   const uploadEnabled = !readOnly && allAgreementsSigned !== false;
+  const maxFilesPerUpload: number = PORTAL_UPLOAD_MAX_FILES_PER_REQUEST;
+  const uploadLimitLabel = `${maxFilesPerUpload} file${
+    maxFilesPerUpload === 1 ? '' : 's'
+  } per upload, ${formatPortalUploadSize(PORTAL_UPLOAD_MAX_BYTES)} each`;
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
@@ -68,6 +72,18 @@ export function PortalContentUploadSection({
           variant: 'destructive',
           title: 'Too many files',
           description: `Upload up to ${PORTAL_UPLOAD_MAX_FILES_PER_REQUEST} files at a time.`,
+        });
+        return;
+      }
+
+      const oversizedFile = files.find((file) => file.size > PORTAL_UPLOAD_MAX_BYTES);
+      if (oversizedFile) {
+        toast({
+          variant: 'destructive',
+          title: 'File is too large',
+          description: `${oversizedFile.name} exceeds the ${formatPortalUploadSize(
+            PORTAL_UPLOAD_MAX_BYTES
+          )} per-file limit.`,
         });
         return;
       }
@@ -171,8 +187,7 @@ export function PortalContentUploadSection({
       </h2>
       {!readOnly ? (
         <p className="mb-6 text-sm text-muted-foreground">
-          Upload documents, images, or archives for your project. Maximum{' '}
-          {formatPortalUploadSize(PORTAL_UPLOAD_MAX_BYTES)} per file.
+          Upload documents, images, or archives for your project. Limit: {uploadLimitLabel}.
         </p>
       ) : null}
 
@@ -209,8 +224,7 @@ export function PortalContentUploadSection({
               {isUploading ? 'Uploading…' : 'Drag and drop files here'}
             </p>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              or click to browse. PDF, Word, text, images, and ZIP up to{' '}
-              {formatPortalUploadSize(PORTAL_UPLOAD_MAX_BYTES)} each.
+              or click to browse. PDF, Word, text, images, and ZIP. Limit: {uploadLimitLabel}.
             </p>
             <input
               ref={inputRef}

@@ -19,6 +19,9 @@ type SendPaymentEmailInput = PortalPaymentEmailDetails & {
   audience: 'client' | 'admin';
 };
 
+let cachedPaymentAdminEmails: string[] | null = null;
+let paymentAdminEmailsLookup: Promise<string[]> | null = null;
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -44,28 +47,47 @@ function getPaymentAdminEmail(): string {
   );
 }
 
+async function loadPaymentAdminEmails(): Promise<string[]> {
+  const { prisma } = await import('@/lib/prisma');
+  const adminRequests = await prisma.consultationRequest.findMany({
+    where: {
+      portalUser: {
+        role: 'a',
+      },
+      email: {
+        not: '',
+      },
+    },
+    select: {
+      email: true,
+    },
+  });
+
+  const emails = adminRequests
+    .map(({ email }) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  return Array.from(new Set(emails));
+}
+
 async function getPaymentAdminEmails(): Promise<string[]> {
+  if (cachedPaymentAdminEmails) {
+    return cachedPaymentAdminEmails;
+  }
+
+  if (!paymentAdminEmailsLookup) {
+    paymentAdminEmailsLookup = loadPaymentAdminEmails()
+      .then((emails) => {
+        cachedPaymentAdminEmails = emails;
+        return emails;
+      })
+      .finally(() => {
+        paymentAdminEmailsLookup = null;
+      });
+  }
+
   try {
-    const { prisma } = await import('@/lib/prisma');
-    const adminRequests = await prisma.consultationRequest.findMany({
-      where: {
-        portalUser: {
-          role: 'a',
-        },
-        email: {
-          not: '',
-        },
-      },
-      select: {
-        email: true,
-      },
-    });
-
-    const emails = adminRequests
-      .map(({ email }) => email.trim().toLowerCase())
-      .filter(Boolean);
-
-    return Array.from(new Set(emails));
+    return await paymentAdminEmailsLookup;
   } catch (error) {
     console.error('Failed to resolve payment admin emails:', error);
     return [];
