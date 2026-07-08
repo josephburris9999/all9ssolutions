@@ -12,7 +12,7 @@ import {
 import type { PortalAdminClientCategoryCounts } from '@/lib/portal-admin-nav';
 
 /** Poll category counts while an admin has the portal open and the tab is visible. */
-const CATEGORY_COUNTS_POLL_INTERVAL_MS = 60_000;
+const CATEGORY_COUNTS_POLL_INTERVAL_MS = 300_000;
 
 type PortalAdminCategoryCountsContextValue = {
   counts: PortalAdminClientCategoryCounts;

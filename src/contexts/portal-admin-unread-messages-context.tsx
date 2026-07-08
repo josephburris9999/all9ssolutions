@@ -11,7 +11,7 @@ import {
 } from 'react';
 import type { PortalAdminUnreadMessageProject } from '@/lib/portal-admin-unread-messages';
 
-const UNREAD_MESSAGES_POLL_INTERVAL_MS = 30_000;
+const UNREAD_MESSAGES_POLL_INTERVAL_MS = 120_000;
 
 export type PortalAdminUnreadMessagesState = {
   hasUnviewed: boolean;
