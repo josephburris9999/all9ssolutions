@@ -15,46 +15,14 @@ import {
   isConsultationRateLimitEnabled,
 } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
-import { sendConsultationConfirmationEmail } from '@/lib/consultation-email';
+import {
+  sendConsultationAdminEmail,
+  sendConsultationConfirmationEmail,
+} from '@/lib/consultation-email';
 import { saveConsultationConfirmationResendEmailId } from '@/lib/consultation-email-delivery';
 import { findLinkedPortalUserIdByConsultationEmail } from '@/lib/portal-user';
 
 export const runtime = 'nodejs';
-
-async function forwardToMailHandler(payload: Record<string, string>) {
-  const forwardUrl = process.env.CONSULTATION_MAIL_FORWARD_URL;
-  if (!forwardUrl) return { ok: true as const, skipped: true as const };
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  const apiSecret = process.env.CONSULTATION_API_SECRET;
-  if (apiSecret) {
-    headers['X-Consultation-Secret'] = apiSecret;
-  }
-
-  const res = await fetch(forwardUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-
-  let body: { ok?: boolean; error?: string } = {};
-  try {
-    body = (await res.json()) as typeof body;
-  } catch {
-    // ignore
-  }
-
-  if (!res.ok || !body.ok) {
-    return {
-      ok: false as const,
-      error: typeof body.error === 'string' ? body.error : 'Mail delivery failed',
-    };
-  }
-
-  return { ok: true as const, skipped: false as const };
-}
 
 export async function POST(request: Request) {
   const ip = getClientIp(request.headers);
@@ -185,7 +153,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const mail = await forwardToMailHandler({
+  const adminNotification = await sendConsultationAdminEmail({
     name: data.name,
     email: data.email,
     phone: data.phone,
@@ -195,8 +163,12 @@ export async function POST(request: Request) {
     message: data.message,
   });
 
-  if (!mail.ok) {
-    console.error('Consultation saved but mail forward failed:', mail.error);
+  if (!adminNotification.ok) {
+    if (adminNotification.skipped) {
+      console.warn('Consultation admin email skipped:', adminNotification.error);
+    } else {
+      console.error('Consultation saved but admin email failed:', adminNotification.error);
+    }
   }
 
   revalidatePath('/portal/admin', 'layout');
