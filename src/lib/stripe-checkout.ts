@@ -54,6 +54,7 @@ export async function createStripeCheckoutSession(
 ): Promise<StripeCheckoutSession> {
   const params = new URLSearchParams();
   params.set('mode', 'payment');
+  params.set('payment_method_types[0]', 'card');
   params.set('success_url', input.successUrl);
   params.set('cancel_url', input.cancelUrl);
   params.set('customer_email', input.customerEmail);
