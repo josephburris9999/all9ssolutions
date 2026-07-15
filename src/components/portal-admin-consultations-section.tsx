@@ -9,11 +9,11 @@ type PortalAdminConsultationsSectionProps = {
 export function PortalAdminConsultationsSection({ clients }: PortalAdminConsultationsSectionProps) {
   return (
     <>
-      <PortalAdminManualConsultationForm />
       <PortalAdminConsultationsTable
         clients={clients}
         emptyMessage="No clients with consultation requests awaiting a project."
       />
+      <PortalAdminManualConsultationForm />
     </>
   );
 }

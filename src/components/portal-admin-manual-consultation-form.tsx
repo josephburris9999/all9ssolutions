@@ -71,6 +71,7 @@ export function PortalAdminManualConsultationForm() {
   const [fieldErrors, setFieldErrors] = useState<ManualConsultationFieldErrors>({});
 
   const hasPhone = isCompletePhoneNumber(values.phone);
+  const shouldShowTimezone = hasPhone || values.preferredContact === 'p';
   const messageLength = values.message.length;
   const messageAtLimit = messageLength >= CONSULTATION_MESSAGE_MAX_LENGTH;
 
@@ -81,7 +82,9 @@ export function PortalAdminManualConsultationForm() {
     setValues((current) => ({
       ...current,
       [field]: value,
-      ...(field === 'phone' && !isCompletePhoneNumber(String(value)) ? { timezone: '' } : {}),
+      ...(field === 'phone' && !isCompletePhoneNumber(String(value)) && current.preferredContact !== 'p'
+        ? { timezone: '' }
+        : {}),
     }));
     if (fieldErrors[field]) {
       setFieldErrors((current) => ({ ...current, [field]: undefined }));
@@ -139,7 +142,7 @@ export function PortalAdminManualConsultationForm() {
 
   return (
     <form
-      className="mb-10 rounded-lg border border-border bg-card/70 p-5"
+      className="mt-10 rounded-lg border border-border bg-card/70 p-5"
       onSubmit={handleSubmit}
       noValidate
     >
@@ -212,7 +215,7 @@ export function PortalAdminManualConsultationForm() {
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto]">
-        {hasPhone ? (
+        {shouldShowTimezone ? (
           <div className="space-y-2">
             <Label htmlFor="manual-consultation-timezone">Timezone</Label>
             <Select
